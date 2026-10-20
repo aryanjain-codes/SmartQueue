@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SmartQueue Live - Patient Tracking</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-surface-variant": "#43474d",
+            "tertiary-fixed": "#6ffbbe",
+            "tertiary": "#00170c",
+            "primary-fixed-dim": "#b0c9e8",
+            "on-secondary-fixed": "#00201d",
+            "surface-tint": "#49607c",
+            "surface-container-high": "#dce9ff",
+            "primary-fixed": "#d1e4ff",
+            "secondary-fixed-dim": "#6bd8cb",
+            "on-tertiary": "#ffffff",
+            "secondary-fixed": "#89f5e7",
+            "on-primary-fixed": "#011d35",
+            "on-secondary": "#ffffff",
+            "surface-container-highest": "#d3e4fe",
+            "primary": "#001428",
+            "surface-dim": "#cbdbf5",
+            "on-background": "#0b1c30",
+            "secondary-container": "#86f2e4",
+            "outline-variant": "#c3c6ce",
+            "surface-container-low": "#eff4ff",
+            "on-secondary-container": "#006f66",
+            "on-error-container": "#93000a",
+            "on-tertiary-container": "#00a270",
+            "outline": "#74777e",
+            "surface-container-lowest": "#ffffff",
+            "inverse-on-surface": "#eaf1ff",
+            "surface-container": "#e5eeff",
+            "background": "#f8f9ff",
+            "inverse-surface": "#213145",
+            "tertiary-container": "#002e1d",
+            "on-secondary-fixed-variant": "#005049",
+            "on-tertiary-fixed-variant": "#005236",
+            "on-primary-fixed-variant": "#314863",
+            "secondary": "#006a61",
+            "surface-variant": "#d3e4fe",
+            "surface": "#f8f9ff",
+            "tertiary-fixed-dim": "#4edea3",
+            "on-error": "#ffffff",
+            "on-tertiary-fixed": "#002113",
+            "on-primary-container": "#7991af",
+            "on-primary": "#ffffff",
+            "error-container": "#ffdad6",
+            "inverse-primary": "#b0c9e8",
+            "surface-bright": "#f8f9ff",
+            "on-surface": "#0b1c30",
+            "error": "#ba1a1a",
+            "primary-container": "#0f2942"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "margin-desktop": "2rem",
+            "margin": "1rem",
+            "space-md": "1rem",
+            "gutter": "1rem",
+            "gutter-desktop": "1.5rem",
+            "space-lg": "1.5rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Inter"],
+            "label-token-md": ["JetBrains Mono"],
+            "body-lg": ["Inter"],
+            "headline-lg-mobile": ["Inter"],
+            "label-meta": ["Inter"],
+            "headline-lg": ["Inter"],
+            "headline-xl": ["Inter"],
+            "body-md": ["Inter"],
+            "headline-xl-mobile": ["Inter"],
+            "body-sm": ["Inter"],
+            "label-data": ["JetBrains Mono"],
+            "label-token-lg": ["JetBrains Mono"],
+            "headline-md": ["Inter"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "label-token-md": ["18px", { "lineHeight": "22px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "label-meta": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-xl-mobile": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "label-data": ["13px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+            "label-token-lg": ["32px", { "lineHeight": "36px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-outlined[data-weight="fill"] {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col justify-between selection:bg-secondary-container">
+<!-- Mobile Viewport Wrapper -->
+<div class="w-full max-w-md mx-auto flex flex-col flex-1 pb-24 shadow-sm bg-background">
+<!-- Top App Bar -->
+<header class="bg-surface-container-lowest sticky top-0 z-40 shadow-sm px-space-md py-space-sm flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-secondary-fixed">
+<span class="material-symbols-outlined text-[20px]" data-icon="local_hospital">local_hospital</span>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm text-primary tracking-tight">SmartQueue Live</h1>
+</div>
+</div>
+<!-- Actions & Avatar -->
+<div class="flex items-center gap-space-xs">
+<button aria-label="Notifications" class="relative p-space-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-error ring-2 ring-surface-container-lowest"></span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant ml-1">
+<img class="w-full h-full object-cover" data-alt="A clean portrait photo of Eleanor Vance, a female patient in her mid-thirties with soft natural lighting and calm facial expression, against a neutral soft hospital room background. The aesthetic reflects professional clinical precision, cool lighting tones, and pristine clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJP0MSo91s2MWjTy6N-nRm2Seh4LM_GWaTfabrqR7DTWdydxRIZwZtNenhUl7YxDvwMf3uON-oeDq-j553TX_Mrrv_-6j9PBZ2QRwm-W-f9i-RDnlrx5s-xPe9a-H9glV0AalNYnxUjl89gvMvkTCSzlIP42JmE5ZGrJkR1f6wDyC8-Iiu-L-6zMGpyqgdNgFhiHtAGHXhS5BBiJkfP1tZC9qOfTOwbfdfN9Gs-WCppHvvo_whPcRyvQ"/>
+</div>
+</div>
+</div>
+<!-- Live Sync Status Sub-bar -->
+<div class="flex items-center justify-between text-on-surface-variant pt-space-xs border-t border-outline-variant/30">
+<div class="flex items-center gap-1.5">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span>
+</span>
+<span class="font-label-meta text-label-meta text-secondary uppercase tracking-wider">Live System Connected</span>
+</div>
+<button class="flex items-center gap-1 font-label-meta text-label-meta hover:text-primary transition-colors cursor-pointer group" onclick="refreshQueue()">
+<span class="material-symbols-outlined text-[14px] group-hover:rotate-180 transition-transform duration-500" data-icon="refresh" id="refresh-icon">refresh</span>
+<span id="update-timestamp">Updated 1 min ago</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="px-space-md pt-space-sm flex flex-col gap-space-md">
+<!-- Patient ID & Clinical Summary Badge Bar -->
+<section class="bg-surface-container-lowest rounded-lg border border-outline-variant p-space-sm flex items-center justify-between shadow-sm">
+<div class="flex flex-col">
+<span class="font-label-data text-label-data text-on-surface-variant">Eleanor Vance (34, F)</span>
+<div class="flex items-center gap-1">
+<span class="font-label-meta text-label-meta text-outline">Patient ID:</span>
+<span class="font-label-data text-label-data text-primary font-semibold">SJH-2025-8841</span>
+</div>
+</div>
+<div class="bg-surface-container-low px-space-sm py-0.5 rounded border border-outline-variant/60 flex items-center gap-1">
+<span class="material-symbols-outlined text-secondary text-[16px]" data-icon="verified_user">verified_user</span>
+<span class="font-label-meta text-label-meta text-on-secondary-container">Triage Cleared</span>
+</div>
+</section>
+<!-- Hero Token Card -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm flex flex-col">
+<!-- Deep Navy Gradient Banner Header -->
+<div class="bg-gradient-to-r from-primary to-primary-container p-space-md text-on-primary flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-meta text-label-meta text-primary-fixed-dim uppercase tracking-wider">Your OPD Assigned Token</span>
+<div class="inline-flex items-center gap-1 bg-secondary-container/20 border border-secondary-fixed/30 text-secondary-fixed rounded-full px-2.5 py-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed animate-pulse"></span>
+<span class="font-label-meta text-label-meta">In Waiting Queue</span>
+</div>
+</div>
+<div class="py-space-xs flex items-baseline justify-between">
+<span class="font-label-token-lg text-4xl sm:text-5xl font-bold tracking-tight text-white font-label-token-lg">MED-042</span>
+<span class="font-label-data text-label-data text-primary-fixed-dim">Floor 2 • West Wing</span>
+</div>
+</div>
+<!-- Token Metadata Details -->
+<div class="p-space-md flex flex-col gap-space-sm bg-surface-container-lowest">
+<div class="flex items-start gap-space-sm">
+<div class="p-1.5 rounded bg-surface-container text-primary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]" data-icon="domain">domain</span>
+</div>
+<div>
+<div class="font-label-meta text-label-meta text-on-surface-variant uppercase">Department &amp; Room</div>
+<div class="font-body-md text-body-md text-primary font-semibold">General Medicine - Clinic Suite B</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Consultation Room 104</div>
+</div>
+</div>
+<div class="h-px bg-outline-variant/40 my-0.5"></div>
+<div class="flex items-start gap-space-sm">
+<div class="p-1.5 rounded bg-surface-container text-primary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]" data-icon="stethoscope">stethoscope</span>
+</div>
+<div>
+<div class="font-label-meta text-label-meta text-on-surface-variant uppercase">Attending Physician</div>
+<div class="font-body-md text-body-md text-primary font-semibold">Dr. Sarah Jenkins, MD</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Consultant Internist</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Real-time Queue Telemetry Grid -->
+<section class="grid grid-cols-3 gap-space-xs">
+<!-- Metric 1: Your Position -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-space-sm flex flex-col justify-between shadow-sm">
+<span class="font-label-meta text-label-meta text-on-surface-variant">Your Position</span>
+<div class="my-space-xs">
+<span class="font-headline-sm text-headline-sm text-secondary font-bold block">3rd</span>
+<span class="font-label-meta text-label-meta text-on-surface-variant">in line</span>
+</div>
+<span class="font-label-meta text-[10px] text-outline">Priority Routine</span>
+</div>
+<!-- Metric 2: Now Serving -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-space-sm flex flex-col justify-between shadow-sm">
+<span class="font-label-meta text-label-meta text-on-surface-variant">Now Serving</span>
+<div class="my-space-xs">
+<span class="font-label-token-md text-label-token-md text-primary font-bold block">MED-039</span>
+<span class="font-label-meta text-label-meta text-secondary">In Room 104</span>
+</div>
+<span class="font-label-meta text-[10px] text-outline">2 tokens away</span>
+</div>
+<!-- Metric 3: Estimated Wait -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-space-sm flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-meta text-label-meta text-on-surface-variant">Est. Wait</span>
+<span class="bg-secondary-container/30 text-on-secondary-container text-[9px] font-bold px-1 rounded uppercase tracking-wider">AI</span>
+</div>
+<div class="my-space-xs">
+<span class="font-headline-sm text-headline-sm text-primary font-bold block">~14 mins</span>
+<span class="font-label-meta text-label-meta text-outline">By 10:48 AM</span>
+</div>
+<span class="font-label-meta text-[9px] text-outline-variant truncate">SmartQueue ML</span>
+</div>
+</section>
+<!-- Step Progress Tracker Card -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant p-space-md shadow-sm">
+<div class="flex items-center justify-between mb-space-md">
+<h2 class="font-headline-sm text-headline-sm text-primary">Live Visit Workflow</h2>
+<span class="font-label-meta text-label-meta text-secondary font-semibold">Step 2 of 4 Active</span>
+</div>
+<div class="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-outline-variant/60">
+<!-- Step 1: Completed -->
+<div class="relative">
+<div class="absolute -left-6 top-0.5 w-[22px] h-[22px] rounded-full bg-secondary flex items-center justify-center text-white ring-4 ring-surface-container-lowest">
+<span class="material-symbols-outlined text-[14px]" data-icon="check">check</span>
+</div>
+<div>
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md font-semibold text-primary">OPD Check-in Verified</span>
+<span class="font-label-data text-label-data text-on-surface-variant">10:15 AM</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Token printed and digital medical profile validated.</p>
+</div>
+</div>
+<!-- Step 2: Active -->
+<div class="relative">
+<div class="absolute -left-6 top-0.5 w-[22px] h-[22px] rounded-full bg-primary-container border-2 border-secondary flex items-center justify-center text-secondary-fixed ring-4 ring-surface-container-lowest">
+<span class="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
+</div>
+<div class="bg-surface-container-low p-space-sm rounded-lg border border-secondary/30">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md font-semibold text-primary flex items-center gap-1.5">
+                  Waiting Outside Room 104
+                  <span class="w-2 h-2 rounded-full bg-secondary inline-block"></span>
+</span>
+<span class="font-label-meta text-label-meta text-secondary font-bold">CURRENT</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Please stay seated within hearing range of the counter chime.</p>
+</div>
+</div>
+<!-- Step 3: Upcoming -->
+<div class="relative opacity-70">
+<div class="absolute -left-6 top-0.5 w-[22px] h-[22px] rounded-full bg-surface-container border border-outline-variant flex items-center justify-center text-outline ring-4 ring-surface-container-lowest">
+<span class="material-symbols-outlined text-[13px]" data-icon="timer">timer</span>
+</div>
+<div>
+<span class="font-body-md text-body-md font-semibold text-primary">Vitals Check by Triage Nurse</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Blood pressure, oxygen saturation, and body temperature.</p>
+</div>
+</div>
+<!-- Step 4: Upcoming -->
+<div class="relative opacity-70">
+<div class="absolute -left-6 top-0.5 w-[22px] h-[22px] rounded-full bg-surface-container border border-outline-variant flex items-center justify-center text-outline ring-4 ring-surface-container-lowest">
+<span class="material-symbols-outlined text-[13px]" data-icon="person_play">person_play</span>
+</div>
+<div>
+<span class="font-body-md text-body-md font-semibold text-primary">Doctor Consultation</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Dr. Sarah Jenkins • Suite B Clinic Room 104</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Next Steps Instruction Card -->
+<section class="bg-surface-container-low border border-outline-variant rounded-xl p-space-md flex gap-space-sm items-start">
+<div class="p-2 rounded-lg bg-surface-container-highest text-secondary shrink-0">
+<span class="material-symbols-outlined text-[20px]" data-icon="campaign">campaign</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-headline-sm text-sm font-semibold text-primary">Lounge Instruction</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+            Please remain within <strong class="text-primary font-semibold">Zone B waiting lounge</strong>. You will receive an SMS and audio call chime when Token <span class="font-label-data text-label-data font-bold text-primary">MED-041</span> is called.
+          </p>
+</div>
+</section>
+<!-- Quick Action Buttons -->
+<section class="flex flex-col gap-space-sm mb-space-sm">
+<button class="w-full bg-surface-container-lowest border-2 border-secondary text-secondary hover:bg-secondary-container/20 active:scale-95 transition-all rounded-lg py-2.5 px-space-md flex items-center justify-center gap-space-sm font-semibold shadow-sm text-body-md">
+<span class="material-symbols-outlined text-[20px]" data-icon="qr_code_2">qr_code_2</span>
+<span>View 30-Day Digital QR Pass</span>
+</button>
+<div class="grid grid-cols-2 gap-space-sm">
+<button class="bg-surface-container-lowest border border-outline-variant hover:bg-surface-container active:scale-95 transition-all text-on-surface py-2.5 px-space-sm rounded-lg flex items-center justify-center gap-1.5 font-body-sm text-body-sm text-center">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="accessible">accessible</span>
+<span>Request Assistance</span>
+</button>
+<button class="bg-surface-container-lowest border border-outline-variant hover:bg-surface-container active:scale-95 transition-all text-on-surface py-2.5 px-space-sm rounded-lg flex items-center justify-center gap-1.5 font-body-sm text-body-sm text-center">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="event_repeat">event_repeat</span>
+<span>Reschedule Token</span>
+</button>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Semantic Shell from Shared Components JSON) -->
+<!-- Destination count: 4, Active: Live Queue -->
+<nav aria-label="Bottom Navigation" class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-space-sm py-space-xs pb-safe bg-surface-container-lowest dark:bg-primary-container shadow-sm dark:shadow-none max-w-md mx-auto inset-x-0">
+<!-- Tab 1: Live Queue (ACTIVE) -->
+<a aria-current="page" class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed bg-secondary-container/20 dark:bg-secondary-container/30 rounded-lg px-space-sm py-space-xs active:scale-95 transition-transform duration-100" href="#live-queue">
+<span class="material-symbols-outlined text-[22px]" data-icon="queue" data-weight="fill">queue</span>
+<span class="text-label-meta font-label-meta mt-0.5">Live Queue</span>
+</a>
+<!-- Tab 2: My Token (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-space-sm py-space-xs hover:text-primary dark:hover:text-on-primary-container transition-colors active:scale-95 transition-transform duration-100" href="#my-token">
+<span class="material-symbols-outlined text-[22px]" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span class="text-label-meta font-label-meta mt-0.5">My Token</span>
+</a>
+<!-- Tab 3: OPD Check-In (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-space-sm py-space-xs hover:text-primary dark:hover:text-on-primary-container transition-colors active:scale-95 transition-transform duration-100" href="#opd-check-in">
+<span class="material-symbols-outlined text-[22px]" data-icon="assignment">assignment</span>
+<span class="text-label-meta font-label-meta mt-0.5">OPD Check-In</span>
+</a>
+<!-- Tab 4: Help (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-space-sm py-space-xs hover:text-primary dark:hover:text-on-primary-container transition-colors active:scale-95 transition-transform duration-100" href="#help">
+<span class="material-symbols-outlined text-[22px]" data-icon="help_outline">help_outline</span>
+<span class="text-label-meta font-label-meta mt-0.5">Help</span>
+</a>
+</nav>
+</div>
+<!-- Interactive Mock Logic -->
+<script>
+    function refreshQueue() {
+      const icon = document.getElementById('refresh-icon');
+      const timestamp = document.getElementById('update-timestamp');
+      if (icon) {
+        icon.classList.add('rotate-180');
+        timestamp.textContent = 'Updating...';
+        setTimeout(() => {
+          icon.classList.remove('rotate-180');
+          timestamp.textContent = 'Updated just now';
+        }, 600);
+      }
+    }
+  </script>
+</body></html>

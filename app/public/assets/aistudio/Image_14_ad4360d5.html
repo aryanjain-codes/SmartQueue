@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-background text-on-surface" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SmartQueue OPD - Predictive Analytics Dashboard</title>
+<!-- Google Fonts: Inter & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration verbatim from design system -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-surface-variant": "#43474d",
+            "tertiary-fixed": "#6ffbbe",
+            "tertiary": "#00170c",
+            "primary-fixed-dim": "#b0c9e8",
+            "on-secondary-fixed": "#00201d",
+            "surface-tint": "#49607c",
+            "surface-container-high": "#dce9ff",
+            "primary-fixed": "#d1e4ff",
+            "secondary-fixed-dim": "#6bd8cb",
+            "on-tertiary": "#ffffff",
+            "secondary-fixed": "#89f5e7",
+            "on-primary-fixed": "#011d35",
+            "on-secondary": "#ffffff",
+            "surface-container-highest": "#d3e4fe",
+            "primary": "#001428",
+            "surface-dim": "#cbdbf5",
+            "on-background": "#0b1c30",
+            "secondary-container": "#86f2e4",
+            "outline-variant": "#c3c6ce",
+            "surface-container-low": "#eff4ff",
+            "on-secondary-container": "#006f66",
+            "on-error-container": "#93000a",
+            "on-tertiary-container": "#00a270",
+            "outline": "#74777e",
+            "surface-container-lowest": "#ffffff",
+            "inverse-on-surface": "#eaf1ff",
+            "surface-container": "#e5eeff",
+            "background": "#f8f9ff",
+            "inverse-surface": "#213145",
+            "tertiary-container": "#002e1d",
+            "on-secondary-fixed-variant": "#005049",
+            "on-tertiary-fixed-variant": "#005236",
+            "on-primary-fixed-variant": "#314863",
+            "secondary": "#006a61",
+            "surface-variant": "#d3e4fe",
+            "surface": "#f8f9ff",
+            "tertiary-fixed-dim": "#4edea3",
+            "on-error": "#ffffff",
+            "on-tertiary-fixed": "#002113",
+            "on-primary-container": "#7991af",
+            "on-primary": "#ffffff",
+            "error-container": "#ffdad6",
+            "inverse-primary": "#b0c9e8",
+            "surface-bright": "#f8f9ff",
+            "on-surface": "#0b1c30",
+            "error": "#ba1a1a",
+            "primary-container": "#0f2942"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "margin-desktop": "2rem",
+            "margin": "1rem",
+            "space-md": "1rem",
+            "gutter": "1rem",
+            "gutter-desktop": "1.5rem",
+            "space-lg": "1.5rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Inter"],
+            "label-token-md": ["JetBrains Mono"],
+            "body-lg": ["Inter"],
+            "headline-lg-mobile": ["Inter"],
+            "label-meta": ["Inter"],
+            "headline-lg": ["Inter"],
+            "headline-xl": ["Inter"],
+            "body-md": ["Inter"],
+            "headline-xl-mobile": ["Inter"],
+            "body-sm": ["Inter"],
+            "label-data": ["JetBrains Mono"],
+            "label-token-lg": ["JetBrains Mono"],
+            "headline-md": ["Inter"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "label-token-md": ["18px", { "lineHeight": "22px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "label-meta": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-xl-mobile": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "label-data": ["13px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+            "label-token-lg": ["32px", { "lineHeight": "36px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    /* Subtle custom scrollbar for clinical dense matrices */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #eff4ff;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #c3c6ce;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="h-full flex overflow-hidden antialiased bg-background text-on-surface">
+<!-- ========================================================================= -->
+<!-- LEFT SIDEBAR: Shared NavigationDrawer + Operational Shortcuts            -->
+<!-- ========================================================================= -->
+<aside class="w-72 h-full flex flex-col justify-between shrink-0 bg-surface-container-low border-r border-outline-variant z-20 select-none shadow-md">
+<div class="p-space-md flex flex-col gap-space-lg">
+<!-- Hospital & App Brand Header -->
+<div class="flex items-center gap-space-sm pb-space-sm border-b border-outline-variant">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-white flex items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-secondary-fixed" data-icon="local_hospital">local_hospital</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm font-bold text-primary tracking-tight truncate">SmartQueue OPD</span>
+<span class="font-label-meta text-label-meta text-on-surface-variant uppercase tracking-wider">Clinical Ops OS</span>
+</div>
+</div>
+<!-- Nurse / Staff Profile Badge (JSON Header Type: profile) -->
+<div class="bg-surface-container-lowest p-space-sm rounded-lg border border-outline-variant flex items-center gap-space-sm shadow-sm">
+<div class="w-9 h-9 rounded-full bg-surface-container-highest flex items-center justify-center text-primary font-headline-sm font-bold border border-outline-variant shrink-0">
+<span class="material-symbols-outlined text-primary" data-icon="badge">badge</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="font-headline-sm text-[13px] font-semibold text-primary truncate">OPD Central Triage</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant truncate">St. Jude Memorial Hospital</div>
+<div class="font-label-data text-[10px] text-secondary font-semibold">Staff ID #8841-A</div>
+</div>
+</div>
+<!-- Navigation Link Items: Shared Components JSON with 'Queue Analytics' Active -->
+<nav class="flex flex-col gap-1">
+<div class="font-label-meta text-label-meta text-outline px-space-md py-1 uppercase tracking-wider">Clinical Navigation</div>
+<!-- Tab 1: Triage Queue -->
+<a class="flex items-center gap-space-sm text-on-surface-variant hover:bg-surface-container transition-colors duration-150 px-space-md py-space-sm rounded-lg group" href="#">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="clinical_notes">clinical_notes</span>
+<span class="font-label-data text-label-data">Triage Queue</span>
+<span class="ml-auto font-label-data text-[11px] bg-surface-container px-1.5 py-0.5 rounded text-outline">18</span>
+</a>
+<!-- Tab 2: Desk Calls -->
+<a class="flex items-center gap-space-sm text-on-surface-variant hover:bg-surface-container transition-colors duration-150 px-space-md py-space-sm rounded-lg group" href="#">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="notifications_active">notifications_active</span>
+<span class="font-label-data text-label-data">Desk Calls</span>
+</a>
+<!-- Tab 3: Department Routing -->
+<a class="flex items-center gap-space-sm text-on-surface-variant hover:bg-surface-container transition-colors duration-150 px-space-md py-space-sm rounded-lg group" href="#">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="alt_route">alt_route</span>
+<span class="font-label-data text-label-data">Department Routing</span>
+</a>
+<!-- Tab 4: Staff Logs -->
+<a class="flex items-center gap-space-sm text-on-surface-variant hover:bg-surface-container transition-colors duration-150 px-space-md py-space-sm rounded-lg group" href="#">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="badge">badge</span>
+<span class="font-label-data text-label-data">Staff Logs</span>
+</a>
+<div class="font-label-meta text-label-meta text-outline px-space-md pt-3 pb-1 uppercase tracking-wider">Predictive Intelligence</div>
+<!-- ACTIVE TAB: Queue Analytics -->
+<a class="flex items-center gap-space-sm bg-surface-container-high text-secondary font-semibold px-space-md py-space-sm rounded-lg border-l-4 border-secondary shadow-sm" href="#">
+<span class="material-symbols-outlined text-secondary" data-icon="monitoring">monitoring</span>
+<span class="font-label-data text-label-data">Queue Analytics</span>
+<span class="ml-auto flex h-2 w-2 relative">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span>
+</span>
+</a>
+<!-- Real-time Room Flow Monitor -->
+<a class="flex items-center gap-space-sm text-on-surface-variant hover:bg-surface-container transition-colors duration-150 px-space-md py-space-sm rounded-lg group" href="#">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="meeting_room">meeting_room</span>
+<span class="font-label-data text-label-data">Counter Workload</span>
+</a>
+</nav>
+</div>
+<!-- Sidebar Operational Status Footer -->
+<div class="p-space-md border-t border-outline-variant bg-surface-container/50 flex flex-col gap-space-xs">
+<div class="flex items-center justify-between font-label-meta text-label-meta text-outline">
+<span>GATEWAY TELEMETRY</span>
+<span class="text-secondary flex items-center gap-1 font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> ONLINE
+        </span>
+</div>
+<div class="font-label-data text-[11px] text-on-surface-variant flex items-center justify-between">
+<span>Active Tokens: <strong class="text-primary font-semibold">73 in flow</strong></span>
+<span>Avg Lag: 18ms</span>
+</div>
+</div>
+</aside>
+<!-- ========================================================================= -->
+<!-- MAIN WORKSPACE: TopBar + Analytics Dashboard Content                      -->
+<!-- ========================================================================= -->
+<main class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-background">
+<!-- Top Bar Component (docked full-width top-0, border-b border-outline-variant) -->
+<header class="h-16 shrink-0 bg-surface-container-lowest border-b border-outline-variant flex items-center justify-between px-space-xl z-10 shadow-sm">
+<div class="flex items-center gap-space-lg min-w-0">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-sm">
+<h1 class="font-headline-md text-headline-md font-bold text-primary tracking-tight">OPD Flow &amp; Predictive Queue Analytics</h1>
+<span class="px-2 py-0.5 rounded text-[11px] font-label-meta uppercase tracking-wider bg-surface-container text-on-surface-variant border border-outline-variant">
+              Live Monitor
+            </span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary" data-icon="domain">domain</span>
+<span>St. Jude Memorial Hospital Central Outpatient Wing</span>
+<span class="text-outline-variant">•</span>
+<span class="text-outline">Zone B &amp; C Integrated Counters</span>
+</div>
+</div>
+</div>
+<!-- Controls & Header Action Group -->
+<div class="flex items-center gap-space-md shrink-0">
+<!-- Date Filter Dropdown -->
+<div class="relative">
+<button class="h-9 px-space-md rounded bg-surface-container-lowest border border-outline-variant text-on-surface font-body-sm text-body-sm flex items-center gap-2 hover:bg-surface-container transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant" data-icon="calendar_today">calendar_today</span>
+<span class="font-medium text-primary">Today (Oct 24, 2025)</span>
+<span class="material-symbols-outlined text-[18px] text-outline" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+<!-- Simulation Disclaimer Pill -->
+<div class="h-9 px-space-md rounded-full bg-surface-container-high text-primary border border-surface-variant flex items-center gap-2 font-body-sm text-[12px]">
+<span class="material-symbols-outlined text-[16px] text-secondary font-bold" data-icon="info">info</span>
+<span class="font-medium">Note: All charts and waiting trends are simulated data for demonstration purposes</span>
+</div>
+<!-- Emergency / Refresh Quick Button -->
+<button class="h-9 w-9 rounded flex items-center justify-center border border-outline-variant text-on-surface-variant hover:bg-surface-container transition-colors" title="Sync Queue Pipeline">
+<span class="material-symbols-outlined text-[20px]" data-icon="sync">sync</span>
+</button>
+<button class="h-9 px-space-md rounded bg-primary-container text-white font-body-sm text-body-sm font-semibold flex items-center gap-1.5 shadow-sm hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[18px] text-secondary-fixed" data-icon="file_download">file_download</span>
+<span>Export OPD Report</span>
+</button>
+</div>
+</header>
+<!-- Scrollable Dashboard Body Canvas (12-column Grid) -->
+<div class="flex-1 overflow-y-auto p-space-xl space-y-space-lg">
+<!-- ===================================================================== -->
+<!-- SECTION 1: TOP KPI SUMMARY CARDS (4-Column Bento Row)                 -->
+<!-- ===================================================================== -->
+<section class="grid grid-cols-4 gap-space-lg">
+<!-- KPI 1: Total Patients Checked-in -->
+<div class="bg-surface-container-lowest p-space-lg rounded-lg border border-outline-variant shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary"></div>
+<div class="flex items-start justify-between">
+<span class="font-label-meta text-label-meta uppercase tracking-wider text-on-surface-variant">Total Patients Checked-in</span>
+<span class="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]" data-icon="how_to_reg">how_to_reg</span>
+</span>
+</div>
+<div class="mt-space-md flex items-baseline gap-space-sm">
+<span class="font-label-token-lg text-[36px] font-bold text-primary leading-none">342</span>
+<span class="font-label-data text-[12px] font-semibold text-secondary flex items-center">
+<span class="material-symbols-outlined text-[14px]" data-icon="arrow_upward">arrow_upward</span>
+              +14% vs yesterday
+            </span>
+</div>
+<div class="mt-space-sm pt-space-xs border-t border-outline-variant/50 flex items-center justify-between text-outline font-body-sm text-[12px]">
+<span>Walk-ins: <strong class="text-on-surface">198</strong></span>
+<span>Scheduled: <strong class="text-on-surface">144</strong></span>
+</div>
+</div>
+<!-- KPI 2: Current Average Wait Time -->
+<div class="bg-surface-container-lowest p-space-lg rounded-lg border border-outline-variant shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary"></div>
+<div class="flex items-start justify-between">
+<span class="font-label-meta text-label-meta uppercase tracking-wider text-on-surface-variant">Current Average Wait Time</span>
+<span class="w-8 h-8 rounded bg-secondary-container/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]" data-icon="hourglass_top">hourglass_top</span>
+</span>
+</div>
+<div class="mt-space-md flex items-baseline gap-space-sm">
+<span class="font-label-token-lg text-[36px] font-bold text-primary leading-none">16.4</span>
+<span class="font-headline-sm text-headline-sm text-on-surface-variant">mins</span>
+<span class="ml-auto px-2 py-0.5 rounded text-[11px] font-label-meta font-bold uppercase tracking-wider bg-surface-container-high text-secondary border border-secondary-container">
+              Target &lt;20 mins
+            </span>
+</div>
+<div class="mt-space-sm pt-space-xs border-t border-outline-variant/50 flex items-center justify-between font-body-sm text-[12px]">
+<span class="text-outline">SLA Compliant</span>
+<span class="text-secondary font-medium flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-secondary"></span> Within Safety Buffer
+            </span>
+</div>
+</div>
+<!-- KPI 3: Busiest Clinic -->
+<div class="bg-surface-container-lowest p-space-lg rounded-lg border border-outline-variant shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-outline"></div>
+<div class="flex items-start justify-between">
+<span class="font-label-meta text-label-meta uppercase tracking-wider text-on-surface-variant">Busiest Clinic</span>
+<span class="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]" data-icon="stethoscope">stethoscope</span>
+</span>
+</div>
+<div class="mt-space-md flex flex-col">
+<span class="font-headline-sm text-[20px] font-bold text-primary truncate leading-tight">General Medicine</span>
+<span class="font-label-data text-label-data text-on-surface-variant font-semibold mt-1">84 visits registered</span>
+</div>
+<div class="mt-space-sm pt-space-xs border-t border-outline-variant/50 flex items-center justify-between text-outline font-body-sm text-[12px]">
+<span>Active Desks: <strong class="text-primary">3 Counters</strong></span>
+<span class="text-error font-medium">Load: 92%</span>
+</div>
+</div>
+<!-- KPI 4: Predicted Peak Rush Window -->
+<div class="bg-surface-container-lowest p-space-lg rounded-lg border border-outline-variant shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary-container"></div>
+<div class="flex items-start justify-between">
+<span class="font-label-meta text-label-meta uppercase tracking-wider text-on-surface-variant">Predicted Peak Rush Window</span>
+<span class="w-8 h-8 rounded bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]" data-icon="alarm">alarm</span>
+</span>
+</div>
+<div class="mt-space-md flex flex-col">
+<span class="font-label-token-md text-[20px] font-bold text-primary leading-tight">11:00 AM - 01:30 PM</span>
+<span class="font-body-sm text-[12px] text-on-surface-variant mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-error" data-icon="trending_up">trending_up</span>
+              Projected influx: ~115 arrivals
+            </span>
+</div>
+<div class="mt-space-sm pt-space-xs border-t border-outline-variant/50 flex items-center justify-between text-outline font-body-sm text-[12px]">
+<span>Staff Buffer: Ready</span>
+<span class="text-primary font-semibold">Triage Lv 2 Prepared</span>
+</div>
+</div>
+</section>
+<!-- ===================================================================== -->
+<!-- SECTION 2: MAIN VISUALIZATION GRID (Left 2/3 + Right 1/3)              -->
+<!-- ===================================================================== -->
+<section class="grid grid-cols-12 gap-space-lg items-stretch">
+<!-- CARD 1: Hourly Patient Arrivals & Queue Congestion (Left 8 Cols) -->
+<div class="col-span-8 bg-surface-container-lowest p-space-lg rounded-lg border border-outline-variant shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between pb-space-md border-b border-outline-variant/70">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm font-bold text-primary">Hourly Patient Arrivals &amp; Queue Congestion</h2>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-meta uppercase tracking-wider bg-surface-container text-outline">Simulated Data</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                Composite histogram showing patient check-ins against active waiting queue volume (07:00 AM – 06:00 PM).
+              </p>
+</div>
+<!-- Legend Indicators -->
+<div class="flex items-center gap-space-md shrink-0">
+<div class="flex items-center gap-1.5 font-label-data text-[12px] text-on-surface-variant">
+<span class="w-3 h-3 rounded-sm bg-primary"></span>
+<span>Check-in Volume</span>
+</div>
+<div class="flex items-center gap-1.5 font-label-data text-[12px] text-on-surface-variant">
+<span class="w-3 h-1.5 bg-secondary rounded-full"></span>
+<span>Active Queue Load</span>
+</div>
+</div>
+</div>
+<!-- Chart Area: Visual Bar Chart with Peaks at 10:00 AM and 01:00 PM -->
+<div class="mt-space-lg relative h-72 w-full flex flex-col justify-between">
+<!-- Y-Axis Grid Lines & Markers -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none select-none text-outline font-label-data text-[11px]">
+<div class="flex items-center w-full border-b border-outline-variant/40">
+<span class="w-10">60 Pt</span><div class="flex-1"></div>
+</div>
+<div class="flex items-center w-full border-b border-outline-variant/40">
+<span class="w-10">45 Pt</span><div class="flex-1"></div>
+</div>
+<div class="flex items-center w-full border-b border-outline-variant/40">
+<span class="w-10">30 Pt</span><div class="flex-1"></div>
+</div>
+<div class="flex items-center w-full border-b border-outline-variant/40">
+<span class="w-10">15 Pt</span><div class="flex-1"></div>
+</div>
+<div class="flex items-center w-full border-b border-outline-variant">
+<span class="w-10">0 Pt</span><div class="flex-1"></div>
+</div>
+</div>
+<!-- SVG Trend Line Overlay (Bezier Congestion Wave) -->
+<svg class="absolute inset-x-0 bottom-6 left-10 w-[calc(100%-40px)] h-56 pointer-events-none z-10 overflow-visible" preserveaspectratio="none" viewbox="0 0 100 100">
+<!-- Gradient under trend curve -->
+<defs>
+<lineargradient id="surgeGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#006a61" stop-opacity="0.25"></stop>
+<stop offset="100%" stop-color="#006a61" stop-opacity="0.0"></stop>
+</lineargradient>
+</defs>
+<polygon fill="url(#surgeGrad)" points="0,95 4,85 13,68 22,50 31,18 40,32 49,42 58,16 67,28 76,55 85,75 94,88 100,95 100,100 0,100"></polygon>
+<polyline fill="none" points="0,95 4,85 13,68 22,50 31,18 40,32 49,42 58,16 67,28 76,55 85,75 94,88 100,95" stroke="#006a61" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></polyline>
+<!-- Highlight circles on the two critical peaks -->
+<circle cx="31" cy="18" fill="#ffffff" r="4.5" stroke="#006a61" stroke-width="2.5"></circle>
+<circle cx="58" cy="16" fill="#ffffff" r="4.5" stroke="#ba1a1a" stroke-width="2.5"></circle>
+</svg>
+<!-- Bars Container (12 Hourly intervals: 07 AM to 06 PM) -->
+<div class="relative h-56 pl-10 flex items-end justify-between z-0 pb-1">
+<!-- 07:00 AM -->
+<div class="flex-1 flex flex-col items-center group relative h-full justify-end">
+<div class="w-6 bg-surface-container hover:bg-primary transition-colors rounded-t" style="height: 18%;"></div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 bg-primary text-white text-[10px] font-label-data py-0.5 px-1.5 rounded pointer-events-none transition-opacity">11 Pt</div>
+</div>
+<!-- 08:00 AM -->
+<div class="flex-1 flex flex-col items-center group relative h-full justify-end">
+<div class="w-6 bg-surface-container hover:bg-primary transition-colors rounded-t" style="height: 32%;"></div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 bg-primary text-white text-[10px] font-label-data py-0.5 px-1.5 rounded pointer-events-none transition-opacity">19 Pt</div>
+</div>
+<!-- 09:00 AM -->
+<div class="flex-1 flex flex-col items-center group relative h-full justify-end">
+<div class="w-6 bg-primary/70 hover:bg-primary transition-colors rounded-t" style="height: 52%;"></div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 bg-primary text-white text-[10px] font-label-data py-0.5 px-1.5 rounded pointer-events-none transition-opacity">31 Pt</div>
+</div>
+<!-- 10:00 AM (Peak 1) -->
+<div class="flex-1 flex flex-col items-center group relative h-full justify-end">
+<div class="w-6 bg-primary hover:bg-primary-container transition-colors rounded-t relative" style="height: 84%;">
+<span class="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-secondary font-label-data">PEAK 1</span>
+</div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 bg-primary text-white text-[10px] font-label-data py-0.5 px-1.5 rounded pointer-events-none transition-opacity">50 Pt</div>
+</div>
+<!-- 11:00 AM -->
+<div class="flex-1 flex flex-col items-center group relative h-full justify-end">
+<div class="w-6 bg-primary/80 hover:bg-primary transition-colors rounded-t" style="height: 68%;"></div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 bg-primary text-white text-[10px] font-label-data py-0.5 px-1.5 rounded pointer-events-none transition-opacity">41 Pt</div>
+</div>
+<!-- 12:00 PM -->
+<div class="flex-1 flex flex-col items-center group relative h-full justify-end">
+<div class="w-6 bg-primary/70 hover:bg-primary transition-colors rounded-t" style="height: 58%;"></div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 bg-primary text-white text-[10px] font-label-data py-0.5 px-1.5 rounded pointer-events-none transition-opacity">35 Pt</div>
+</div>
+<!-- 01:00 PM (Peak 2 - Rush) -->
+<div class="flex-1 flex flex-col items-center group relative h-full justify-end">
+<div class="w-6 bg-primary hover:bg-primary-container transition-colors rounded-t relative" style="height: 88%;">
+<span class="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-error font-label-data">PEAK 2</span>
+</div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 bg-primary text-white text-[10px] font-label-data py-0.5 px-1.5 rounded pointer-events-none transition-opacity">53 Pt</div>
+</div>
+<!-- 02:00 PM -->
+<div class="flex-1 flex flex-col items-center group relative h-full justify-end">
+<div class="w-6 bg-primary/75 hover:bg-primary transition-colors rounded-t" style="height: 72%;"></div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 bg-primary text-white text-[10px] font-label-data py-0.5 px-1.5 rounded pointer-events-none transition-opacity">43 Pt</div>
+</div>
+<!-- 03:00 PM -->
+<div class="flex-1 flex flex-col items-center group relative h-full justify-end">
+<div class="w-6 bg-primary/60 hover:bg-primary transition-colors rounded-t" style="height: 48%;"></div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 bg-primary text-white text-[10px] font-label-data py-0.5 px-1.5 rounded pointer-events-none transition-opacity">29 Pt</div>
+</div>
+<!-- 04:00 PM -->
+<div class="flex-1 flex flex-col items-center group relative h-full justify-end">
+<div class="w-6 bg-surface-container-high hover:bg-primary transition-colors rounded-t" style="height: 32%;"></div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 bg-primary text-white text-[10px] font-label-data py-0.5 px-1.5 rounded pointer-events-none transition-opacity">19 Pt</div>
+</div>
+<!-- 05:00 PM -->
+<div class="flex-1 flex flex-col items-center group relative h-full justify-end">
+<div class="w-6 bg-surface-container hover:bg-primary transition-colors rounded-t" style="height: 22%;"></div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 bg-primary text-white text-[10px] font-label-data py-0.5 px-1.5 rounded pointer-events-none transition-opacity">13 Pt</div>
+</div>
+<!-- 06:00 PM -->
+<div class="flex-1 flex flex-col items-center group relative h-full justify-end">
+<div class="w-6 bg-surface-container hover:bg-primary transition-colors rounded-t" style="height: 12%;"></div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 bg-primary text-white text-[10px] font-label-data py-0.5 px-1.5 rounded pointer-events-none transition-opacity">7 Pt</div>
+</div>
+</div>
+<!-- X-Axis Labels (Hours from 07:00 AM to 06:00 PM) -->
+<div class="pl-10 pt-2 flex items-center justify-between text-outline font-label-data text-[10px] border-t border-outline-variant">
+<span>07:00 AM</span>
+<span>08:00 AM</span>
+<span>09:00 AM</span>
+<span class="text-secondary font-bold">10:00 AM</span>
+<span>11:00 AM</span>
+<span>12:00 PM</span>
+<span class="text-error font-bold">01:00 PM</span>
+<span>02:00 PM</span>
+<span>03:00 PM</span>
+<span>04:00 PM</span>
+<span>05:00 PM</span>
+<span>06:00 PM</span>
+</div>
+</div>
+<!-- Bottom Micro-insight indicator -->
+<div class="mt-space-md pt-space-sm border-t border-outline-variant/60 flex items-center justify-between font-body-sm text-[12px] text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[16px]" data-icon="lightbulb">lightbulb</span>
+<span>Morning intake surged between 10:00 AM–10:45 AM due to delayed Fast-Track Lab referrals.</span>
+</div>
+<span class="font-label-data text-outline">X: Operational Hours | Y: Check-in Volume</span>
+</div>
+</div>
+<!-- CARD 2: OPD-Wise Patient Distribution (Right 4 Cols) -->
+<div class="col-span-4 bg-surface-container-lowest p-space-lg rounded-lg border border-outline-variant shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-space-sm border-b border-outline-variant/70">
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-primary">OPD Patient Distribution</h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Active department caseload</span>
+</div>
+<span class="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]" data-icon="pie_chart">pie_chart</span>
+</span>
+</div>
+<!-- Visual Donut & Aggregate Metric -->
+<div class="my-space-md flex items-center gap-space-md p-space-sm bg-surface-container-low rounded-lg border border-outline-variant/60">
+<!-- SVG Donut Chart representation -->
+<div class="relative w-24 h-24 shrink-0">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<!-- Background ring -->
+<circle cx="18" cy="18" fill="none" r="15.9155" stroke="#eff4ff" stroke-width="4.5"></circle>
+<!-- General Medicine 38% -->
+<circle cx="18" cy="18" fill="none" r="15.9155" stroke="#001428" stroke-dasharray="38, 100" stroke-dashoffset="0" stroke-width="4.5"></circle>
+<!-- Pediatrics 22% -->
+<circle cx="18" cy="18" fill="none" r="15.9155" stroke="#006a61" stroke-dasharray="22, 100" stroke-dashoffset="-38" stroke-width="4.5"></circle>
+<!-- Orthopedics 18% -->
+<circle cx="18" cy="18" fill="none" r="15.9155" stroke="#49607c" stroke-dasharray="18, 100" stroke-dashoffset="-60" stroke-width="4.5"></circle>
+<!-- Cardiology 14% -->
+<circle cx="18" cy="18" fill="none" r="15.9155" stroke="#86f2e4" stroke-dasharray="14, 100" stroke-dashoffset="-78" stroke-width="4.5"></circle>
+<!-- ENT & Dental 8% -->
+<circle cx="18" cy="18" fill="none" r="15.9155" stroke="#c3c6ce" stroke-dasharray="8, 100" stroke-dashoffset="-92" stroke-width="4.5"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+<span class="font-label-data text-[12px] font-bold text-primary">342</span>
+<span class="font-label-meta text-[8px] uppercase text-outline">Total</span>
+</div>
+</div>
+<!-- Quick Summary Stats -->
+<div class="flex flex-col min-w-0">
+<div class="font-label-data text-label-data font-semibold text-primary">General Medicine Leading</div>
+<div class="font-body-sm text-[12px] text-on-surface-variant mt-0.5">38% total share (84 patients) requires additional counter routing.</div>
+</div>
+</div>
+<!-- Distribution Breakdown Cards / Bar breakdown -->
+<div class="space-y-space-sm">
+<!-- Item 1: General Medicine 38% -->
+<div class="p-2 rounded bg-surface-container-lowest border border-outline-variant/60 hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between font-label-data text-[12px] mb-1">
+<span class="font-semibold text-primary flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-primary"></span> General Medicine
+                  </span>
+<span class="font-bold text-primary">38% <span class="font-normal text-outline text-[11px]">(130 pt)</span></span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 38%"></div>
+</div>
+</div>
+<!-- Item 2: Pediatrics 22% -->
+<div class="p-2 rounded bg-surface-container-lowest border border-outline-variant/60 hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between font-label-data text-[12px] mb-1">
+<span class="font-semibold text-primary flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-secondary"></span> Pediatrics
+                  </span>
+<span class="font-bold text-primary">22% <span class="font-normal text-outline text-[11px]">(75 pt)</span></span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 22%"></div>
+</div>
+</div>
+<!-- Item 3: Orthopedics 18% -->
+<div class="p-2 rounded bg-surface-container-lowest border border-outline-variant/60 hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between font-label-data text-[12px] mb-1">
+<span class="font-semibold text-primary flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-surface-tint"></span> Orthopedics
+                  </span>
+<span class="font-bold text-primary">18% <span class="font-normal text-outline text-[11px]">(62 pt)</span></span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-surface-tint h-full rounded-full" style="width: 18%"></div>
+</div>
+</div>
+<!-- Item 4: Cardiology 14% -->
+<div class="p-2 rounded bg-surface-container-lowest border border-outline-variant/60 hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between font-label-data text-[12px] mb-1">
+<span class="font-semibold text-primary flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-secondary-container"></span> Cardiology
+                  </span>
+<span class="font-bold text-primary">14% <span class="font-normal text-outline text-[11px]">(48 pt)</span></span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary-container h-full rounded-full" style="width: 14%"></div>
+</div>
+</div>
+<!-- Item 5: ENT & Dental 8% -->
+<div class="p-2 rounded bg-surface-container-lowest border border-outline-variant/60 hover:bg-surface-container transition-colors">
+<div class="flex items-center justify-between font-label-data text-[12px] mb-1">
+<span class="font-semibold text-primary flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-outline"></span> ENT &amp; Dental
+                  </span>
+<span class="font-bold text-primary">8% <span class="font-normal text-outline text-[11px]">(27 pt)</span></span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-outline h-full rounded-full" style="width: 8%"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-space-sm mt-space-sm border-t border-outline-variant/60 flex items-center justify-between text-outline font-label-meta text-[11px]">
+<span>TOTAL DEPARTMENTS: 5</span>
+<a class="text-secondary font-semibold hover:underline flex items-center gap-0.5" href="#">
+              Breakdown Details <span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+</a>
+</div>
+</div>
+</section>
+<!-- ===================================================================== -->
+<!-- SECTION 3: BOTTOM PREDICTIVE INSIGHTS & OPTIMIZATION (Half-Width)     -->
+<!-- ===================================================================== -->
+<section class="grid grid-cols-2 gap-space-lg">
+<!-- CARD 3: Estimated Demand & Waiting-Time Trends (Next 4 Hours) -->
+<div class="bg-surface-container-lowest p-space-lg rounded-lg border border-outline-variant shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-start justify-between pb-space-sm border-b border-outline-variant/70">
+<div>
+<div class="flex items-center gap-2">
+<h3 class="font-headline-sm text-headline-sm font-bold text-primary">Estimated Demand &amp; Waiting-Time Trends</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-meta uppercase tracking-wider bg-surface-container-high text-secondary font-semibold">
+                    Next 4 Hours
+                  </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                  Predictive timeline based on check-in arrival pacing, historical walk-in velocity, and doctor consultation cycle times.
+                </p>
+</div>
+<span class="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]" data-icon="timeline">timeline</span>
+</span>
+</div>
+<!-- Projected Warning Pill Banner -->
+<div class="mt-space-md p-space-sm rounded-lg bg-surface-container-low border-l-4 border-error flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-error text-[20px] shrink-0 mt-0.5" data-icon="warning">warning</span>
+<div class="flex flex-col text-on-surface">
+<div class="font-headline-sm text-[13px] font-bold text-primary">Critical Wait Escalation Warning</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">
+                  General Medicine wait time is projected to climb to <strong class="text-error font-semibold font-label-data">28 mins by 12:30 PM</strong> if no additional counters are opened.
+                </div>
+</div>
+</div>
+<!-- Time Projection Breakdown Matrix -->
+<div class="mt-space-md grid grid-cols-4 gap-space-sm">
+<!-- 11:30 AM Projection -->
+<div class="p-space-sm rounded border border-outline-variant bg-surface-container-lowest flex flex-col gap-1">
+<span class="font-label-data text-[11px] text-outline font-medium">11:30 AM</span>
+<div class="font-label-token-md text-[18px] font-bold text-primary">19.2 m</div>
+<div class="w-full bg-surface-container h-1 rounded-full overflow-hidden">
+<div class="bg-secondary h-full" style="width: 65%;"></div>
+</div>
+<span class="font-label-meta text-[10px] text-secondary font-semibold">Under Threshold</span>
+</div>
+<!-- 12:00 PM Projection -->
+<div class="p-space-sm rounded border border-outline-variant bg-surface-container-lowest flex flex-col gap-1">
+<span class="font-label-data text-[11px] text-outline font-medium">12:00 PM</span>
+<div class="font-label-token-md text-[18px] font-bold text-primary">22.8 m</div>
+<div class="w-full bg-surface-container h-1 rounded-full overflow-hidden">
+<div class="bg-outline h-full" style="width: 78%;"></div>
+</div>
+<span class="font-label-meta text-[10px] text-outline font-semibold">Target Alert (+2.8m)</span>
+</div>
+<!-- 12:30 PM Projection (Peak Breach) -->
+<div class="p-space-sm rounded border border-error/50 bg-error-container/20 flex flex-col gap-1">
+<span class="font-label-data text-[11px] text-error font-bold">12:30 PM (CRITICAL)</span>
+<div class="font-label-token-md text-[18px] font-bold text-error">28.0 m</div>
+<div class="w-full bg-error-container h-1 rounded-full overflow-hidden">
+<div class="bg-error h-full" style="width: 95%;"></div>
+</div>
+<span class="font-label-meta text-[10px] text-error font-bold">Breaches 20m SLA</span>
+</div>
+<!-- 01:00 PM Projection -->
+<div class="p-space-sm rounded border border-outline-variant bg-surface-container-lowest flex flex-col gap-1">
+<span class="font-label-data text-[11px] text-outline font-medium">01:00 PM</span>
+<div class="font-label-token-md text-[18px] font-bold text-primary">25.4 m</div>
+<div class="w-full bg-surface-container h-1 rounded-full overflow-hidden">
+<div class="bg-outline h-full" style="width: 86%;"></div>
+</div>
+<span class="font-label-meta text-[10px] text-on-surface-variant font-semibold">Slow Discharge</span>
+</div>
+</div>
+</div>
+<div class="pt-space-sm mt-space-md border-t border-outline-variant/60 flex items-center justify-between text-outline font-body-sm text-[12px]">
+<span>Model Confidence: <strong>94.2%</strong> (Historical Gradient Boost)</span>
+<span class="text-primary font-medium">Next Refresh in 03:45</span>
+</div>
+</div>
+<!-- CARD 4: AI SmartQueue Recommendation Engine -->
+<div class="bg-surface-container-lowest p-space-lg rounded-lg border border-outline-variant shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-start justify-between pb-space-sm border-b border-outline-variant/70">
+<div>
+<div class="flex items-center gap-2">
+<h3 class="font-headline-sm text-headline-sm font-bold text-primary">AI SmartQueue Recommendation Engine</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-meta uppercase tracking-wider bg-secondary-container/30 text-secondary font-bold">
+                    Action Required
+                  </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                  Automated triage heuristic suggests counter reassignment to maintain queue SLA compliance.
+                </p>
+</div>
+<div class="w-8 h-8 rounded bg-primary-container text-secondary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="smart_toy">smart_toy</span>
+</div>
+</div>
+<!-- Alert Banner (Teal & Navy High Contrast Card) -->
+<div class="mt-space-md p-space-md rounded-lg bg-primary-container text-white border-l-4 border-secondary-fixed flex flex-col gap-space-xs shadow-sm">
+<div class="flex items-center gap-2 text-secondary-fixed">
+<span class="material-symbols-outlined text-[20px]" data-icon="bolt">bolt</span>
+<span class="font-headline-sm text-[14px] font-bold tracking-tight">Recommended Action: Open Additional Counter at 11:30 AM</span>
+</div>
+<p class="font-body-md text-[13px] text-surface-container-high leading-relaxed mt-1">
+                Projected surge in General Medicine will exceed the 20-min wait SLA. Deploying <strong class="text-white underline font-medium">Room 105 Counter #04</strong> will reduce average patient waiting time by <strong class="text-secondary-fixed font-semibold">34% (saving ~11 mins per patient)</strong>.
+              </p>
+<!-- Quick Impact Tags -->
+<div class="mt-2 flex items-center gap-space-sm pt-2 border-t border-on-primary-container/30">
+<div class="flex items-center gap-1 font-label-data text-[11px] text-secondary-fixed">
+<span class="material-symbols-outlined text-[14px]" data-icon="timer">timer</span>
+<span>Impact: -11m Wait Time</span>
+</div>
+<span class="text-on-primary-container">•</span>
+<div class="flex items-center gap-1 font-label-data text-[11px] text-surface-container-high">
+<span class="material-symbols-outlined text-[14px]" data-icon="person_add">person_add</span>
+<span>Staff: Dr. S. Mehta (Standby Pool)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Buttons Form/Cluster -->
+<div class="pt-space-md mt-space-md border-t border-outline-variant/60 flex items-center justify-between gap-space-md">
+<button class="h-10 px-space-md rounded bg-transparent border border-outline-variant text-on-surface-variant font-body-sm text-body-sm font-semibold hover:bg-surface-container transition-colors flex items-center gap-1.5 focus:outline-none">
+<span class="material-symbols-outlined text-[18px]" data-icon="close">close</span>
+<span>Dismiss Recommendation</span>
+</button>
+<button class="h-10 px-space-lg rounded bg-secondary text-white font-body-sm text-body-sm font-semibold hover:opacity-95 active:scale-95 transition-all shadow-sm flex items-center gap-2 focus:ring-2 focus:ring-offset-2 focus:ring-secondary">
+<span class="material-symbols-outlined text-[18px]" data-icon="check_circle">check_circle</span>
+<span>Approve &amp; Route Doctor to Counter 105</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Lightweight inline interaction script for dashboard simulation -->
+<script>
+    // Micro-interaction for dismissal or approval of the AI alert
+    document.addEventListener('DOMContentLoaded', () => {
+      const dismissBtn = document.querySelector('button:has(span[data-icon="close"])');
+      const approveBtn = document.querySelector('button:has(span[data-icon="check_circle"])');
+      
+      if (dismissBtn) {
+        dismissBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const banner = dismissBtn.closest('.bg-surface-container-lowest').querySelector('.bg-primary-container');
+          if (banner) {
+            banner.style.opacity = '0.4';
+            dismissBtn.disabled = true;
+            dismissBtn.innerText = 'Dismissed';
+          }
+        });
+      }
+
+      if (approveBtn) {
+        approveBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          approveBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">done_all</span><span>Routed to Room 105!</span>';
+          approveBtn.classList.replace('bg-secondary', 'bg-primary');
+        });
+      }
+    });
+  </script>
+</body></html>

@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-background" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>SmartQueue Gate Scanner</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with custom configuration -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-surface-variant": "#43474d",
+            "tertiary-fixed": "#6ffbbe",
+            "tertiary": "#00170c",
+            "primary-fixed-dim": "#b0c9e8",
+            "on-secondary-fixed": "#00201d",
+            "surface-tint": "#49607c",
+            "surface-container-high": "#dce9ff",
+            "primary-fixed": "#d1e4ff",
+            "secondary-fixed-dim": "#6bd8cb",
+            "on-tertiary": "#ffffff",
+            "secondary-fixed": "#89f5e7",
+            "on-primary-fixed": "#011d35",
+            "on-secondary": "#ffffff",
+            "surface-container-highest": "#d3e4fe",
+            "primary": "#001428",
+            "surface-dim": "#cbdbf5",
+            "on-background": "#0b1c30",
+            "secondary-container": "#86f2e4",
+            "outline-variant": "#c3c6ce",
+            "surface-container-low": "#eff4ff",
+            "on-secondary-container": "#006f66",
+            "on-error-container": "#93000a",
+            "on-tertiary-container": "#00a270",
+            "outline": "#74777e",
+            "surface-container-lowest": "#ffffff",
+            "inverse-on-surface": "#eaf1ff",
+            "surface-container": "#e5eeff",
+            "background": "#f8f9ff",
+            "inverse-surface": "#213145",
+            "tertiary-container": "#002e1d",
+            "on-secondary-fixed-variant": "#005049",
+            "on-tertiary-fixed-variant": "#005236",
+            "on-primary-fixed-variant": "#314863",
+            "secondary": "#006a61",
+            "surface-variant": "#d3e4fe",
+            "surface": "#f8f9ff",
+            "tertiary-fixed-dim": "#4edea3",
+            "on-error": "#ffffff",
+            "on-tertiary-fixed": "#002113",
+            "on-primary-container": "#7991af",
+            "on-primary": "#ffffff",
+            "error-container": "#ffdad6",
+            "inverse-primary": "#b0c9e8",
+            "surface-bright": "#f8f9ff",
+            "on-surface": "#0b1c30",
+            "error": "#ba1a1a",
+            "primary-container": "#0f2942"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "margin-desktop": "2rem",
+            "margin": "1rem",
+            "space-md": "1rem",
+            "gutter": "1rem",
+            "gutter-desktop": "1.5rem",
+            "space-lg": "1.5rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Inter"],
+            "label-token-md": ["JetBrains Mono"],
+            "body-lg": ["Inter"],
+            "headline-lg-mobile": ["Inter"],
+            "label-meta": ["Inter"],
+            "headline-lg": ["Inter"],
+            "headline-xl": ["Inter"],
+            "body-md": ["Inter"],
+            "headline-xl-mobile": ["Inter"],
+            "body-sm": ["Inter"],
+            "label-data": ["JetBrains Mono"],
+            "label-token-lg": ["JetBrains Mono"],
+            "headline-md": ["Inter"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "label-token-md": ["18px", { "lineHeight": "22px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "label-meta": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-xl-mobile": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "label-data": ["13px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+            "label-token-lg": ["32px", { "lineHeight": "36px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    
+    @keyframes laserSweep {
+      0% { top: 12%; opacity: 0.2; }
+      50% { opacity: 1; }
+      100% { top: 86%; opacity: 0.2; }
+    }
+    
+    .animate-laser {
+      animation: laserSweep 2.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulseSoft {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.08); opacity: 1; }
+    }
+    .animate-pulse-soft {
+      animation: pulseSoft 2s ease-in-out infinite;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="h-full bg-background text-on-surface antialiased flex flex-col justify-start items-center">
+<!-- Mobile Viewport Outer Shell (Realistic Handheld Terminal / Kiosk Frame) -->
+<div class="w-full max-w-md min-h-screen bg-surface-container-lowest flex flex-col shadow-2xl relative border-x border-outline-variant">
+<!-- Top Hardware Status Strip (Terminal Signal, Battery, Sync Status) -->
+<div class="w-full bg-primary-container px-space-md py-1 flex items-center justify-between text-on-primary-container font-label-data text-body-sm select-none border-b border-primary/40">
+<div class="flex items-center gap-1.5">
+<span class="inline-block w-2 h-2 rounded-full bg-secondary-fixed animate-pulse"></span>
+<span class="text-[10px] tracking-wider uppercase font-semibold text-primary-fixed">Kiosk-Online</span>
+<span class="text-outline text-[10px]">|</span>
+<span class="text-primary-fixed-dim text-[10px]">99.8% Sync</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-label-data text-primary-fixed">98%</span>
+<span class="material-symbols-outlined text-[14px] text-primary-fixed">battery_full</span>
+<span class="material-symbols-outlined text-[14px] text-primary-fixed">wifi</span>
+</div>
+</div>
+<!-- Top Navigation Header (from Shared Components JSON: TopAppBar spec) -->
+<header class="w-full bg-surface-container-lowest border-b border-outline-variant shadow-sm z-30">
+<div class="flex justify-between items-center w-full px-space-md h-14">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary shadow-sm">
+<span class="material-symbols-outlined text-[20px] text-secondary-fixed">local_hospital</span>
+</div>
+<div>
+<h1 class="text-headline-sm font-headline-sm text-primary tracking-tight leading-none">SmartQueue Gate Scanner</h1>
+<span class="text-[10px] font-label-meta text-secondary font-bold tracking-wider uppercase mt-0.5 block">Security Terminal #02</span>
+</div>
+</div>
+<!-- Terminal Status Icon / Profile Action -->
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors active:scale-95" title="Terminal Menu">
+<span class="material-symbols-outlined text-[24px]">account_circle</span>
+</button>
+</div>
+<!-- Gate Designation & Staff Badge Bar -->
+<div class="bg-surface-container-low px-space-md py-space-xs border-t border-outline-variant flex items-center justify-between text-on-surface-variant">
+<div class="flex items-center gap-1.5 overflow-hidden">
+<span class="material-symbols-outlined text-[16px] text-secondary flex-shrink-0">door_front</span>
+<span class="font-body-sm text-body-sm font-semibold text-on-surface truncate">Gate 02 - West Wing Ambulatory Entry</span>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-lowest px-2 py-0.5 rounded border border-outline-variant flex-shrink-0">
+<span class="material-symbols-outlined text-[14px] text-primary">badge</span>
+<span class="font-label-meta text-[10px] font-semibold text-primary">Officer M. Reyes (ID: SEC-402)</span>
+</div>
+</div>
+</header>
+<!-- Main Operational Scroll Area -->
+<main class="flex-1 flex flex-col px-space-md py-space-sm space-y-space-md pb-24 overflow-y-auto">
+<!-- SCANNER SECTION: High-Tech Viewport -->
+<section class="flex flex-col items-center">
+<div class="w-full relative bg-primary rounded-xl overflow-hidden shadow-md border border-outline/30 flex flex-col items-center justify-center aspect-[4/3.2] max-h-72">
+<!-- Subtle Camera Background Pattern Simulation -->
+<div class="absolute inset-0 opacity-20 bg-[radial-gradient(#6bd8cb_1px,transparent_1px)] [background-size:16px_16px]"></div>
+<!-- Optical Lens Focus Guides & Dark Vignette -->
+<div class="absolute inset-0 bg-gradient-to-t from-primary via-transparent to-primary/80 pointer-events-none"></div>
+<!-- Top Camera Controls Toolbar (Flash & Flip) -->
+<div class="absolute top-2.5 inset-x-3 flex justify-between items-center z-20">
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary-container/85 border border-primary-fixed-dim/20 backdrop-blur-sm">
+<span class="w-2 h-2 rounded-full bg-error animate-ping"></span>
+<span class="text-[10px] font-label-data text-primary-fixed font-semibold tracking-wider uppercase">Live Cam 01</span>
+</div>
+<div class="flex items-center gap-2">
+<!-- Flashlight Toggle -->
+<button class="w-8 h-8 rounded-lg bg-primary-container/80 hover:bg-primary-container text-primary-fixed flex items-center justify-center border border-outline/40 backdrop-blur-sm active:scale-95 transition-all" id="torchBtn" title="Toggle Flashlight">
+<span class="material-symbols-outlined text-[18px]">flash_on</span>
+</button>
+<!-- Switch Camera Toggle -->
+<button class="w-8 h-8 rounded-lg bg-primary-container/80 hover:bg-primary-container text-primary-fixed flex items-center justify-center border border-outline/40 backdrop-blur-sm active:scale-95 transition-all" id="switchCamBtn" title="Switch Sensor">
+<span class="material-symbols-outlined text-[18px]">flip_camera_ios</span>
+</button>
+</div>
+</div>
+<!-- QR TARGET RETICLE (Corner Brackets) -->
+<div class="relative w-48 h-48 sm:w-52 sm:h-52 z-10 flex items-center justify-center">
+<!-- Laser Scanline Animation Bar -->
+<div class="absolute w-full h-1 bg-gradient-to-r from-transparent via-secondary-fixed to-transparent shadow-[0_0_12px_#89f5e7] animate-laser z-20 pointer-events-none"></div>
+<!-- Corner Alignment Brackets (Teal) -->
+<!-- Top-Left -->
+<div class="absolute top-0 left-0 w-6 h-6 border-t-[3px] border-l-[3px] border-secondary-fixed rounded-tl-sm"></div>
+<!-- Top-Right -->
+<div class="absolute top-0 right-0 w-6 h-6 border-t-[3px] border-r-[3px] border-secondary-fixed rounded-tr-sm"></div>
+<!-- Bottom-Left -->
+<div class="absolute bottom-0 left-0 w-6 h-6 border-b-[3px] border-l-[3px] border-secondary-fixed rounded-bl-sm"></div>
+<!-- Bottom-Right -->
+<div class="absolute bottom-0 right-0 w-6 h-6 border-b-[3px] border-r-[3px] border-secondary-fixed rounded-br-sm"></div>
+<!-- Central Crosshair / Dimmed QR Placeholder Pattern -->
+<div class="w-36 h-36 border border-secondary-fixed/20 rounded flex flex-col items-center justify-center bg-primary-container/30 backdrop-blur-[1px] relative">
+<span class="material-symbols-outlined text-[54px] text-secondary-fixed/40 animate-pulse-soft">qr_code_scanner</span>
+<span class="text-[10px] font-label-data text-primary-fixed-dim/70 mt-1 uppercase tracking-widest font-semibold">ISO-18004 2D</span>
+</div>
+</div>
+<!-- Guidance Subtitle Overlaid Inside Frame -->
+<div class="absolute bottom-2 inset-x-4 text-center z-20">
+<span class="inline-block px-3 py-1 bg-primary-container/90 rounded-full border border-primary-fixed-dim/20 text-[11px] font-label-meta text-primary-fixed tracking-wide shadow-sm">
+              Align 30-Day QR Pass within the target frame
+            </span>
+</div>
+</div>
+</section>
+<!-- MANUAL ENTRY FALLBACK SECTION -->
+<section class="bg-surface-container-lowest border border-outline-variant rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between mb-2">
+<label class="font-headline-sm text-body-md font-semibold text-primary flex items-center gap-1.5" for="manualPassId">
+<span class="material-symbols-outlined text-[18px] text-secondary">keyboard</span>
+            Manual Fallback Entry
+          </label>
+<span class="text-[10px] font-label-meta uppercase text-on-surface-variant font-medium tracking-wider">Alphanumeric</span>
+</div>
+<form class="flex gap-2" onsubmit="event.preventDefault(); verifyManualToken();">
+<div class="relative flex-1">
+<input class="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded text-primary font-label-data text-label-data placeholder:text-outline focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary uppercase transition-colors" id="manualPassId" name="manualPassId" placeholder="Enter Pass ID manually (e.g. SQ-PASS-90412)" type="text" value="SQ-PASS-90412"/>
+<button class="absolute right-2.5 top-2.5 text-outline hover:text-primary" onclick="document.getElementById('manualPassId').value=''" title="Clear" type="button">
+<span class="material-symbols-outlined text-[16px]">cancel</span>
+</button>
+</div>
+<button class="h-10 px-4 bg-primary hover:bg-primary-container text-on-primary rounded font-label-meta text-[12px] font-semibold tracking-wide flex items-center justify-center gap-1 transition-all active:scale-95 shadow-sm whitespace-nowrap" type="submit">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span>Verify Pass</span>
+</button>
+</form>
+</section>
+<!-- LIVE VERIFICATION RESULT CONTAINER (Interactive States Switcher) -->
+<section class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-body-md font-semibold text-primary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-primary">security_update_good</span>
+            Verification Outcome
+          </h2>
+<span class="text-[10px] font-label-data text-outline font-semibold" id="scanTimestamp">10:14:38 AM • Live</span>
+</div>
+<!-- STATE 1: VALID PASS (Default Active) -->
+<div class="relative bg-surface-container-lowest border-2 border-secondary rounded-xl overflow-hidden shadow-sm transition-all" id="stateValidCard">
+<!-- 4px Left Status Spine -->
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-secondary"></div>
+<div class="p-space-md pl-5">
+<!-- Header Banner -->
+<div class="flex items-center justify-between pb-2 mb-2.5 border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-secondary-container/40 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px] font-bold">check_circle</span>
+</div>
+<div>
+<span class="font-headline-sm text-[13px] font-bold text-secondary tracking-wide uppercase block">VALID PASS - ACCESS GRANTED</span>
+<span class="text-[10px] font-label-data text-on-surface-variant font-medium">Clearance Level: Tier-1 Ambulatory</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-secondary-container/40 text-on-secondary-container font-label-data text-[11px] font-bold border border-secondary/30">
+                ACTIVE
+              </span>
+</div>
+<!-- Subject & Appointment Metadata Grid -->
+<div class="grid grid-cols-2 gap-2 text-left mb-3">
+<div>
+<span class="text-[10px] font-label-meta uppercase text-on-surface-variant block">Authorized Patient</span>
+<p class="font-headline-sm text-body-md font-bold text-primary truncate">Eleanor Vance</p>
+<span class="text-[11px] font-label-data text-outline">Token #A-41 • ID: PT-**348</span>
+</div>
+<div>
+<span class="text-[10px] font-label-meta uppercase text-on-surface-variant block">Designated OPD Desk</span>
+<p class="font-headline-sm text-body-md font-semibold text-primary truncate">OPD General Medicine</p>
+<span class="text-[11px] font-label-data text-secondary font-bold">Room 104 (1st Floor)</span>
+</div>
+</div>
+<!-- Validity Window & Gate Action Bar -->
+<div class="flex items-center justify-between pt-2 border-t border-outline-variant bg-surface-container-low/60 -mx-space-md -mb-space-md px-space-md py-2 text-[11px]">
+<div class="flex items-center gap-1 text-on-surface-variant font-label-data">
+<span class="material-symbols-outlined text-[14px] text-secondary">event_available</span>
+<span>Expiry: <strong class="text-primary font-semibold">Nov 23, 2025</strong> (22 Days Left)</span>
+</div>
+<button class="px-2.5 py-1 bg-secondary text-on-secondary rounded text-[11px] font-label-meta font-semibold hover:bg-on-secondary-container transition-colors active:scale-95 flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[14px]">door_open</span>
+<span>Open Turnstile</span>
+</button>
+</div>
+</div>
+</div>
+<!-- STATE 2: EXPIRED PASS (Hidden by default, toggled via test chips) -->
+<div class="hidden relative bg-surface-container-lowest border-2 border-outline rounded-xl overflow-hidden shadow-sm transition-all" id="stateExpiredCard">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-outline"></div>
+<div class="p-space-md pl-5">
+<div class="flex items-center justify-between pb-2 mb-2.5 border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-surface-container-highest flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[18px]">history_toggle_off</span>
+</div>
+<div>
+<span class="font-headline-sm text-[13px] font-bold text-on-surface tracking-wide uppercase block">EXPIRED PASS - ACCESS DENIED</span>
+<span class="text-[10px] font-label-data text-outline font-medium">Clearance Lapsed (Over 30 Days)</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-data text-[11px] font-bold border border-outline/30">
+                EXPIRED
+              </span>
+</div>
+<div class="text-[12px] font-body-sm text-on-surface-variant mb-2">
+              Visitor <strong class="text-primary">Marcus Brody</strong>'s OPD pass expired on <strong>Oct 20, 2025</strong>. Patient must generate a renewal token at Central Kiosk.
+            </div>
+<div class="flex justify-end pt-2 border-t border-outline-variant">
+<button class="text-[11px] font-label-meta text-secondary font-bold hover:underline" onclick="setTestState('valid')">Return to Valid</button>
+</div>
+</div>
+</div>
+<!-- STATE 3: REVOKED PASS (Hidden by default) -->
+<div class="hidden relative bg-surface-container-lowest border-2 border-error rounded-xl overflow-hidden shadow-sm transition-all" id="stateRevokedCard">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-error"></div>
+<div class="p-space-md pl-5">
+<div class="flex items-center justify-between pb-2 mb-2.5 border-b border-error-container">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[18px]">gavel</span>
+</div>
+<div>
+<span class="font-headline-sm text-[13px] font-bold text-error tracking-wide uppercase block">FLAGGED - ENTRY RESTRICTED</span>
+<span class="text-[10px] font-label-data text-error font-medium">Revocation Code: SEC-FLAG-99</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-error text-on-error font-label-data text-[11px] font-bold">
+                REVOKED
+              </span>
+</div>
+<div class="text-[12px] font-body-sm text-on-surface-variant mb-2">
+              Pass revoked by <strong class="text-primary">Infection Control / Dr. A. Mercer</strong>. Instruct guest to report to External Screening Tent 03 immediately.
+            </div>
+<div class="flex justify-end pt-2 border-t border-outline-variant">
+<button class="text-[11px] font-label-meta text-secondary font-bold hover:underline" onclick="setTestState('valid')">Return to Valid</button>
+</div>
+</div>
+</div>
+<!-- STATE 4: INVALID QR PAYLOAD (Hidden by default) -->
+<div class="hidden relative bg-surface-container-lowest border-2 border-on-surface-variant rounded-xl overflow-hidden shadow-sm transition-all" id="stateInvalidCard">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-outline-variant"></div>
+<div class="p-space-md pl-5">
+<div class="flex items-center justify-between pb-2 mb-2.5 border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">qr_code_2</span>
+</div>
+<div>
+<span class="font-headline-sm text-[13px] font-bold text-on-surface-variant tracking-wide uppercase block">INVALID QR PAYLOAD</span>
+<span class="text-[10px] font-label-data text-outline font-medium">Non-SmartQueue Cryptographic Signature</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-data text-[11px] font-bold">
+                UNRECOGNIZED
+              </span>
+</div>
+<div class="text-[12px] font-body-sm text-on-surface-variant mb-2">
+              Scanned QR code does not match St. Jude Memorial Hospital PKI schemas. Ensure visitor is not presenting an external invoice or train ticket.
+            </div>
+<div class="flex justify-end pt-2 border-t border-outline-variant">
+<button class="text-[11px] font-label-meta text-secondary font-bold hover:underline" onclick="setTestState('valid')">Return to Valid</button>
+</div>
+</div>
+</div>
+<!-- SENSITIVE HEALTH PRIVACY NOTICE BLOCK -->
+<div class="bg-surface-container-low border border-outline-variant rounded-lg p-space-sm flex items-start gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-primary flex-shrink-0 mt-0.5">lock</span>
+<div class="text-[11px] font-body-sm text-on-surface-variant leading-tight">
+<strong class="text-primary font-semibold">Protected Health Details Locked:</strong> 
+            Sensitive clinical diagnosis and medical history require triage nurse/doctor biometric authentication to unlock.
+          </div>
+</div>
+<!-- MINI SIMULATION CHIPS FOR TESTING SCAN STATES -->
+<div class="pt-1">
+<span class="text-[10px] font-label-meta uppercase text-outline tracking-wider font-semibold block mb-1.5">Simulation Trigger / QA Switcher:</span>
+<div class="grid grid-cols-3 gap-1.5">
+<button class="px-2 py-1.5 rounded bg-surface-container hover:bg-surface-container-high border border-outline-variant text-[11px] font-label-data text-on-surface font-semibold text-center truncate active:scale-95 transition-all" onclick="setTestState('expired')">
+              Test Expired (30+d)
+            </button>
+<button class="px-2 py-1.5 rounded bg-error-container/60 hover:bg-error-container border border-error/30 text-[11px] font-label-data text-error font-semibold text-center truncate active:scale-95 transition-all" onclick="setTestState('revoked')">
+              Test Revoked
+            </button>
+<button class="px-2 py-1.5 rounded bg-surface-container hover:bg-surface-container-high border border-outline-variant text-[11px] font-label-data text-on-surface font-semibold text-center truncate active:scale-95 transition-all" onclick="setTestState('invalid')">
+              Test Invalid QR
+            </button>
+</div>
+</div>
+</section>
+<!-- AUDIT LOG SNIPPET AT BOTTOM -->
+<section class="bg-surface-container-lowest border border-outline-variant rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between pb-2 mb-2 border-b border-outline-variant">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary">receipt_long</span>
+<span class="font-headline-sm text-[12px] font-bold text-primary uppercase tracking-wide">Last 3 Scans (Audit Trail)</span>
+</div>
+<span class="text-[10px] font-label-data text-secondary font-semibold">Live Feed</span>
+</div>
+<ul class="space-y-1.5 text-[11px] font-label-data">
+<!-- Item 1 -->
+<li class="flex items-center justify-between p-1.5 rounded bg-surface-container-low border border-outline-variant/60">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-bold text-primary">Token #A-41</span>
+<span class="text-on-surface-variant text-[10px]">(Eleanor Vance)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-1.5 py-0.2 bg-secondary-container/40 text-on-secondary-container rounded text-[9px] font-bold uppercase">Valid</span>
+<span class="text-outline text-[10px]">10:14 AM</span>
+</div>
+</li>
+<!-- Item 2 -->
+<li class="flex items-center justify-between p-1.5 rounded bg-surface-container-low border border-outline-variant/60">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-bold text-primary">Token #B-19</span>
+<span class="text-on-surface-variant text-[10px]">(David Chen)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-1.5 py-0.2 bg-secondary-container/40 text-on-secondary-container rounded text-[9px] font-bold uppercase">Valid</span>
+<span class="text-outline text-[10px]">10:11 AM</span>
+</div>
+</li>
+<!-- Item 3 -->
+<li class="flex items-center justify-between p-1.5 rounded bg-surface-container-low border border-outline-variant/60">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+<span class="font-bold text-error">Unknown QR</span>
+<span class="text-on-surface-variant text-[10px]">(Payload Error)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-1.5 py-0.2 bg-error-container text-error rounded text-[9px] font-bold uppercase">Rejected</span>
+<span class="text-outline text-[10px]">10:07 AM</span>
+</div>
+</li>
+</ul>
+</section>
+</main>
+<!-- Bottom Navigation Bar (Docked Terminal Controls from Shared Components JSON) -->
+<nav class="fixed bottom-0 max-w-md w-full bg-surface-container-lowest border-t border-outline-variant z-40 flex justify-around items-center px-space-sm py-1.5 shadow-lg">
+<!-- Live Queue (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-space-sm py-space-xs hover:text-primary transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[20px]">queue</span>
+<span class="text-label-meta font-label-meta text-[10px] mt-0.5">Live Queue</span>
+</button>
+<!-- My Token (Scanner Destination - Active) -->
+<button class="flex flex-col items-center justify-center text-secondary bg-secondary-container/20 rounded-lg px-space-sm py-space-xs hover:text-primary transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">qr_code_scanner</span>
+<span class="text-label-meta font-label-meta text-[10px] font-semibold mt-0.5">My Token</span>
+</button>
+<!-- OPD Check-In (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-space-sm py-space-xs hover:text-primary transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[20px]">assignment</span>
+<span class="text-label-meta font-label-meta text-[10px] mt-0.5">OPD Check-In</span>
+</button>
+<!-- Help (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-space-sm py-space-xs hover:text-primary transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+<span class="text-label-meta font-label-meta text-[10px] mt-0.5">Help</span>
+</button>
+</nav>
+</div>
+<!-- Micro-interactions Script -->
+<script>
+    // State switcher function for demoing distinct QR outcomes
+    function setTestState(state) {
+      const valid = document.getElementById('stateValidCard');
+      const expired = document.getElementById('stateExpiredCard');
+      const revoked = document.getElementById('stateRevokedCard');
+      const invalid = document.getElementById('stateInvalidCard');
+      const ts = document.getElementById('scanTimestamp');
+      
+      const now = new Date();
+      ts.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' • Simulated';
+
+      valid.classList.add('hidden');
+      expired.classList.add('hidden');
+      revoked.classList.add('hidden');
+      invalid.classList.add('hidden');
+
+      if (state === 'valid') {
+        valid.classList.remove('hidden');
+      } else if (state === 'expired') {
+        expired.classList.remove('hidden');
+      } else if (state === 'revoked') {
+        revoked.classList.remove('hidden');
+      } else if (state === 'invalid') {
+        invalid.classList.remove('hidden');
+      }
+    }
+
+    // Manual Entry Simulation
+    function verifyManualToken() {
+      const input = document.getElementById('manualPassId').value.trim();
+      if (!input) return;
+      
+      if (input.toUpperCase().includes('EXP')) {
+        setTestState('expired');
+      } else if (input.toUpperCase().includes('FLAG') || input.toUpperCase().includes('REV')) {
+        setTestState('revoked');
+      } else if (input.toUpperCase().includes('ERR')) {
+        setTestState('invalid');
+      } else {
+        setTestState('valid');
+      }
+    }
+
+    // Torch Toggle Visual Indicator
+    let torchActive = false;
+    document.getElementById('torchBtn').addEventListener('click', function() {
+      torchActive = !torchActive;
+      this.classList.toggle('text-secondary-fixed', torchActive);
+      this.classList.toggle('bg-secondary/40', torchActive);
+    });
+
+    // Flip Camera Simulation
+    document.getElementById('switchCamBtn').addEventListener('click', function() {
+      this.classList.add('rotate-180');
+      setTimeout(() => {
+        this.classList.remove('rotate-180');
+      }, 300);
+    });
+  </script>
+</body></html>

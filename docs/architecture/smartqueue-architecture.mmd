@@ -1,0 +1,12 @@
+
+flowchart TD
+    P[Patient Portal] --> API[Backend API]
+    S[Staff Dashboard] --> API
+    Q[QR Scanner] --> API
+    API --> AUTH[Authentication and Permissions]
+    AUTH --> DB[(Secure Database)]
+    API --> ETA[Waiting Time Estimator]
+    DB --> AN[Analytics Dashboard]
+    DATA[Synthetic Historical Data] --> ML[Forecasting Module]
+    ML --> AN
+    API --> LOG[Access Audit Log]

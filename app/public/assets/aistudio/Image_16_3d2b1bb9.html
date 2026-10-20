@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-background" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SmartQueue OPD Staff Dashboard - St. Jude Memorial Hospital</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Fonts: Inter & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-surface-variant": "#43474d",
+            "tertiary-fixed": "#6ffbbe",
+            "tertiary": "#00170c",
+            "primary-fixed-dim": "#b0c9e8",
+            "on-secondary-fixed": "#00201d",
+            "surface-tint": "#49607c",
+            "surface-container-high": "#dce9ff",
+            "primary-fixed": "#d1e4ff",
+            "secondary-fixed-dim": "#6bd8cb",
+            "on-tertiary": "#ffffff",
+            "secondary-fixed": "#89f5e7",
+            "on-primary-fixed": "#011d35",
+            "on-secondary": "#ffffff",
+            "surface-container-highest": "#d3e4fe",
+            "primary": "#001428",
+            "surface-dim": "#cbdbf5",
+            "on-background": "#0b1c30",
+            "secondary-container": "#86f2e4",
+            "outline-variant": "#c3c6ce",
+            "surface-container-low": "#eff4ff",
+            "on-secondary-container": "#006f66",
+            "on-error-container": "#93000a",
+            "on-tertiary-container": "#00a270",
+            "outline": "#74777e",
+            "surface-container-lowest": "#ffffff",
+            "inverse-on-surface": "#eaf1ff",
+            "surface-container": "#e5eeff",
+            "background": "#f8f9ff",
+            "inverse-surface": "#213145",
+            "tertiary-container": "#002e1d",
+            "on-secondary-fixed-variant": "#005049",
+            "on-tertiary-fixed-variant": "#005236",
+            "on-primary-fixed-variant": "#314863",
+            "secondary": "#006a61",
+            "surface-variant": "#d3e4fe",
+            "surface": "#f8f9ff",
+            "tertiary-fixed-dim": "#4edea3",
+            "on-error": "#ffffff",
+            "on-tertiary-fixed": "#002113",
+            "on-primary-container": "#7991af",
+            "on-primary": "#ffffff",
+            "error-container": "#ffdad6",
+            "inverse-primary": "#b0c9e8",
+            "surface-bright": "#f8f9ff",
+            "on-surface": "#0b1c30",
+            "error": "#ba1a1a",
+            "primary-container": "#0f2942"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "margin-desktop": "2rem",
+            "margin": "1rem",
+            "space-md": "1rem",
+            "gutter": "1rem",
+            "gutter-desktop": "1.5rem",
+            "space-lg": "1.5rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Inter"],
+            "label-token-md": ["JetBrains Mono"],
+            "body-lg": ["Inter"],
+            "headline-lg-mobile": ["Inter"],
+            "label-meta": ["Inter"],
+            "headline-lg": ["Inter"],
+            "headline-xl": ["Inter"],
+            "body-md": ["Inter"],
+            "headline-xl-mobile": ["Inter"],
+            "body-sm": ["Inter"],
+            "label-data": ["JetBrains Mono"],
+            "label-token-lg": ["JetBrains Mono"],
+            "headline-md": ["Inter"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+            "label-token-md": ["18px", {"lineHeight": "22px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+            "label-meta": ["11px", {"lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+            "headline-xl-mobile": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+            "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+            "label-data": ["13px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+            "label-token-lg": ["32px", {"lineHeight": "36px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+            "headline-md": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="h-full flex overflow-hidden font-body-md text-on-surface bg-background">
+<!-- LEFT SIDEBAR NAVIGATION (240px Desktop Widescreen Rail) -->
+<aside class="w-60 flex-shrink-0 bg-surface-container-low border-r border-outline-variant flex flex-col justify-between z-20">
+<div class="flex flex-col">
+<!-- Brand Header -->
+<div class="h-14 px-space-md flex items-center gap-space-sm border-b border-outline-variant bg-surface-container-lowest">
+<span class="material-symbols-outlined text-secondary" style="font-size: 26px;">local_hospital</span>
+<div>
+<div class="font-headline-sm text-headline-sm text-primary tracking-tight leading-tight">SmartQueue</div>
+<div class="font-label-meta text-label-meta text-on-surface-variant">St. Jude OPD Portal</div>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="p-space-sm space-y-1">
+<!-- Live OPD Queues (Active State) -->
+<a class="flex items-center justify-between px-space-md py-space-sm rounded-lg bg-surface-container-high text-secondary font-headline-sm text-body-md border-l-4 border-secondary transition-colors" href="#">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">queue</span>
+<span>Live OPD Queues</span>
+</div>
+<span class="font-label-meta text-label-meta bg-secondary text-on-secondary px-1.5 py-0.5 rounded-full">42</span>
+</a>
+<!-- Gate Pass Scanner -->
+<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md" href="#">
+<span class="material-symbols-outlined">qr_code_scanner</span>
+<span>Gate Pass Scanner</span>
+</a>
+<!-- Patient Lookup & Registry -->
+<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md" href="#">
+<span class="material-symbols-outlined">person_search</span>
+<span>Patient Lookup</span>
+</a>
+<!-- Triage & Consultations -->
+<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md" href="#">
+<span class="material-symbols-outlined">clinical_notes</span>
+<span>Triage &amp; Consult</span>
+</a>
+<!-- Queue Analytics -->
+<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span>Queue Analytics</span>
+</a>
+<!-- Department Settings -->
+<a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Dept Settings</span>
+</a>
+</nav>
+</div>
+<!-- Bottom User Profile Widget -->
+<div class="p-space-sm border-t border-outline-variant bg-surface-container-lowest">
+<div class="p-space-sm rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-headline-sm text-body-md">
+            SJ
+          </div>
+<div class="overflow-hidden">
+<div class="font-headline-sm text-body-sm text-primary font-bold truncate">Dr. Sarah Jenkins</div>
+<div class="flex items-center gap-1 font-label-meta text-[10px] text-secondary font-semibold">
+<span class="inline-block w-2 h-2 rounded-full bg-secondary-fixed-dim animate-pulse"></span>
+              Suite B • On Duty
+            </div>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-error transition-colors p-1 rounded" title="Log Out">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- MAIN VIEWPORT CANVAS -->
+<div class="flex-1 flex flex-col h-full overflow-hidden">
+<!-- TOP UTILITY BAR -->
+<header class="h-14 bg-surface-container-lowest border-b border-outline-variant px-space-lg flex items-center justify-between gap-space-md z-10">
+<!-- Left Context Dropdowns & Badges -->
+<div class="flex items-center gap-space-md">
+<!-- Department Selector -->
+<div class="flex items-center gap-2 bg-surface-container-low px-space-md py-1.5 rounded-lg border border-outline-variant">
+<span class="material-symbols-outlined text-secondary text-[18px]">meeting_room</span>
+<span class="font-headline-sm text-body-sm text-primary">General Medicine (Room 104)</span>
+<span class="material-symbols-outlined text-outline text-[16px]">expand_more</span>
+</div>
+<!-- Desk Status Indicator -->
+<div class="flex items-center gap-2 px-space-sm py-1 bg-surface-container rounded-lg border border-outline-variant">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+<span class="font-label-data text-label-data text-primary font-semibold">Counter #03 Active</span>
+</div>
+</div>
+<!-- Center Live Velocity Indicator -->
+<div class="flex items-center gap-2 px-space-md py-1 rounded bg-secondary-container/20 text-on-secondary-container border border-secondary-container">
+<span class="material-symbols-outlined text-[18px]">speed</span>
+<span class="font-label-meta text-label-meta">Velocity: <strong>4.2 mins/patient</strong> (Target nominal)</span>
+</div>
+<!-- Right Search & Quick Utilities -->
+<div class="flex items-center gap-space-sm">
+<div class="relative w-72">
+<span class="material-symbols-outlined absolute left-2.5 top-2 text-[18px] text-outline">search</span>
+<input class="w-full pl-8 pr-3 py-1.5 text-body-sm bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:ring-1 focus:ring-secondary focus:border-secondary" placeholder="Token #, Pass ID, or Name..." type="text"/>
+</div>
+<button class="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant" title="Alert Notifications">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+</div>
+</header>
+<!-- WORKSPACE BODY (Main Content Area + Right Analytics Column) -->
+<main class="flex-1 flex overflow-hidden p-space-lg gap-space-lg">
+<!-- CENTER QUEUE CONTROL & ROSTER (Flex Column) -->
+<section class="flex-1 flex flex-col gap-space-lg overflow-y-auto pr-1">
+<!-- HERO PATIENT ACTION PANEL -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-space-lg shadow-sm">
+<div class="flex items-center justify-between pb-space-md border-b border-outline-variant">
+<!-- Patient ID & Token Display -->
+<div class="flex items-center gap-space-lg">
+<div class="px-space-md py-1.5 bg-primary-container text-on-primary rounded-lg shadow-sm text-center">
+<div class="font-label-meta text-[10px] uppercase text-primary-fixed tracking-wider">CURRENT TOKEN</div>
+<div class="font-label-token-lg text-label-token-lg font-bold tracking-tight text-white">MED-039</div>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-md text-headline-md text-primary font-bold">Arthur Pendelton</h2>
+<span class="font-label-data text-label-data text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">58, Male</span>
+<span class="font-label-meta text-label-meta bg-secondary-container/40 text-on-secondary-container px-2 py-0.5 rounded font-semibold">Routine Follow-up</span>
+</div>
+<div class="flex items-center gap-4 text-body-sm text-on-surface-variant mt-1">
+<span>MRN: <strong class="font-label-data">#PT-884210</strong></span>
+<span>•</span>
+<span>Chief Complaint: <strong class="text-on-surface">Hypertension Review &amp; Lipid Profile</strong></span>
+</div>
+</div>
+</div>
+<!-- Live Elapsed Timer Counter -->
+<div class="flex flex-col items-end">
+<div class="font-label-meta text-label-meta text-on-surface-variant uppercase">Consultation Timer</div>
+<div class="flex items-center gap-1.5 font-label-data text-label-token-md text-secondary font-bold">
+<span class="material-symbols-outlined text-[20px] animate-pulse">timer</span>
+<span>08:42</span>
+<span class="text-body-sm font-normal text-on-surface-variant">elapsed</span>
+</div>
+</div>
+</div>
+<!-- Rapid Clinical Action Bar -->
+<div class="flex items-center justify-between pt-space-md">
+<div class="flex items-center gap-space-sm">
+<!-- Complete Consultation -->
+<button class="flex items-center gap-2 px-space-md py-2 bg-secondary text-on-secondary hover:bg-on-secondary-container rounded-lg font-headline-sm text-body-md font-semibold shadow-sm transition-all active:scale-95">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+<span>Complete Consultation</span>
+</button>
+<!-- Call Next Patient -->
+<button class="flex items-center gap-2 px-space-md py-2 bg-primary-container text-on-primary hover:bg-primary rounded-lg font-headline-sm text-body-md font-semibold shadow-sm transition-all active:scale-95">
+<span class="material-symbols-outlined text-[20px]">volume_up</span>
+<span>Call Next Patient (MED-040)</span>
+</button>
+</div>
+<div class="flex items-center gap-space-sm">
+<!-- Sent to Lab Hold -->
+<button class="flex items-center gap-1.5 px-space-md py-2 border border-outline text-on-surface hover:bg-surface-container rounded-lg font-headline-sm text-body-sm font-medium transition-colors">
+<span class="material-symbols-outlined text-[18px] text-amber-600">biotech</span>
+<span>Hold / Sent to Lab</span>
+</button>
+<!-- View Chart -->
+<button class="flex items-center gap-1.5 px-space-md py-2 bg-surface-container-high text-primary hover:bg-surface-container-highest rounded-lg font-headline-sm text-body-sm font-semibold transition-colors">
+<span class="material-symbols-outlined text-[18px]">medical_services</span>
+<span>View Clinical Chart</span>
+</button>
+</div>
+</div>
+</div>
+<!-- OPD-WISE LIVE QUEUE TABLE -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm flex flex-col flex-1">
+<!-- Table Header Controls -->
+<div class="px-space-md py-space-sm border-b border-outline-variant flex items-center justify-between bg-surface-container-low">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">format_list_bulleted</span>
+<h3 class="font-headline-sm text-body-md text-primary font-bold">General Medicine Queue Roster</h3>
+<span class="font-label-meta text-label-meta bg-surface-container-highest text-primary px-2 py-0.5 rounded-full font-bold">14 Waiting</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="font-label-meta text-label-meta text-on-surface-variant">Auto-sync: Active</span>
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant" title="Refresh Queue">
+<span class="material-symbols-outlined text-[18px]">sync</span>
+</button>
+</div>
+</div>
+<!-- Core Data Table -->
+<div class="overflow-x-auto flex-1">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant bg-surface-container text-on-surface-variant font-label-meta text-label-meta uppercase">
+<th class="py-2.5 px-space-md">Token #</th>
+<th class="py-2.5 px-space-md">Patient Name</th>
+<th class="py-2.5 px-space-md">Arrival</th>
+<th class="py-2.5 px-space-md">Wait Duration</th>
+<th class="py-2.5 px-space-md">Triage Severity</th>
+<th class="py-2.5 px-space-md">Current Location</th>
+<th class="py-2.5 px-space-md">Room</th>
+<th class="py-2.5 px-space-md text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant font-body-sm">
+<!-- Row 1: David Ross (Urgent Priority) -->
+<tr class="hover:bg-surface-container-low transition-colors bg-white">
+<td class="py-3 px-space-md font-label-token-md text-body-md font-bold text-primary">MED-040</td>
+<td class="py-3 px-space-md">
+<div class="font-headline-sm text-body-sm text-primary font-semibold">David Ross</div>
+<div class="text-[11px] text-on-surface-variant">42, M • PT-***902</div>
+</td>
+<td class="py-3 px-space-md font-label-data">09:45 AM</td>
+<td class="py-3 px-space-md">
+<span class="font-label-data font-semibold text-amber-700">29m elapsed</span>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 font-label-meta text-label-meta px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                      Urgent Priority
+                    </span>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-outline">airline_seat_recline_normal</span>
+                      Waiting Hall B
+                    </span>
+</td>
+<td class="py-3 px-space-md font-label-data text-on-surface">Room 104</td>
+<td class="py-3 px-space-md text-right">
+<div class="inline-flex items-center gap-1">
+<button class="px-2.5 py-1 bg-secondary text-on-secondary rounded text-xs font-semibold hover:bg-on-secondary-container">Call</button>
+<button class="px-2 py-1 border border-outline-variant rounded text-xs hover:bg-surface-container">Details</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Fatima Al-Mansoor (Routine / Vitals Check) -->
+<tr class="hover:bg-surface-container-low transition-colors bg-surface-container-lowest/50">
+<td class="py-3 px-space-md font-label-token-md text-body-md font-bold text-primary">MED-041</td>
+<td class="py-3 px-space-md">
+<div class="font-headline-sm text-body-sm text-primary font-semibold">Fatima Al-Mansoor</div>
+<div class="text-[11px] text-on-surface-variant">29, F • PT-***415</div>
+</td>
+<td class="py-3 px-space-md font-label-data">09:52 AM</td>
+<td class="py-3 px-space-md font-label-data text-on-surface-variant">22m elapsed</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 font-label-meta text-label-meta px-2 py-0.5 rounded bg-secondary-container/30 text-on-secondary-container border border-secondary-container">
+                      Routine
+                    </span>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 text-secondary font-medium">
+<span class="material-symbols-outlined text-[16px]">vital_signs</span>
+                      At Vitals Check
+                    </span>
+</td>
+<td class="py-3 px-space-md font-label-data text-on-surface">Room 104</td>
+<td class="py-3 px-space-md text-right">
+<button class="px-2 py-1 border border-outline-variant rounded text-xs hover:bg-surface-container">Details</button>
+</td>
+</tr>
+<!-- Row 3: Eleanor Vance (Routine) -->
+<tr class="hover:bg-surface-container-low transition-colors bg-white">
+<td class="py-3 px-space-md font-label-token-md text-body-md font-bold text-primary">MED-042</td>
+<td class="py-3 px-space-md">
+<div class="font-headline-sm text-body-sm text-primary font-semibold">Eleanor Vance</div>
+<div class="text-[11px] text-on-surface-variant">34, F • PT-***711</div>
+</td>
+<td class="py-3 px-space-md font-label-data">10:00 AM</td>
+<td class="py-3 px-space-md font-label-data text-on-surface-variant">14m elapsed</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 font-label-meta text-label-meta px-2 py-0.5 rounded bg-secondary-container/30 text-on-secondary-container border border-secondary-container">
+                      Routine
+                    </span>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-outline">airline_seat_recline_normal</span>
+                      Waiting Hall B
+                    </span>
+</td>
+<td class="py-3 px-space-md font-label-data text-on-surface">Room 104</td>
+<td class="py-3 px-space-md text-right">
+<button class="px-2 py-1 border border-outline-variant rounded text-xs hover:bg-surface-container">Details</button>
+</td>
+</tr>
+<!-- Row 4: Robert Chen (Senior Fast-Track) -->
+<tr class="hover:bg-surface-container-low transition-colors bg-surface-container-lowest/50">
+<td class="py-3 px-space-md font-label-token-md text-body-md font-bold text-primary">MED-043</td>
+<td class="py-3 px-space-md">
+<div class="font-headline-sm text-body-sm text-primary font-semibold">Robert Chen</div>
+<div class="text-[11px] text-on-surface-variant">67, M • PT-***532</div>
+</td>
+<td class="py-3 px-space-md font-label-data">10:08 AM</td>
+<td class="py-3 px-space-md font-label-data text-on-surface-variant">6m elapsed</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 font-label-meta text-label-meta px-2 py-0.5 rounded bg-indigo-100 text-indigo-900 border border-indigo-200">
+<span class="material-symbols-outlined text-[14px]">elderly</span>
+                      Senior Priority
+                    </span>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-outline">airline_seat_recline_normal</span>
+                      Waiting Hall B
+                    </span>
+</td>
+<td class="py-3 px-space-md font-label-data text-on-surface">Room 104</td>
+<td class="py-3 px-space-md text-right">
+<button class="px-2 py-1 border border-outline-variant rounded text-xs hover:bg-surface-container">Details</button>
+</td>
+</tr>
+<!-- Row 5: Clara Oswald (Pediatric Fast-Track) -->
+<tr class="hover:bg-surface-container-low transition-colors bg-white">
+<td class="py-3 px-space-md font-label-token-md text-body-md font-bold text-primary">MED-044</td>
+<td class="py-3 px-space-md">
+<div class="font-headline-sm text-body-sm text-primary font-semibold">Clara Oswald</div>
+<div class="text-[11px] text-on-surface-variant">8, F • PT-***119</div>
+</td>
+<td class="py-3 px-space-md font-label-data">10:14 AM</td>
+<td class="py-3 px-space-md">
+<span class="font-label-meta text-[11px] text-secondary font-semibold">Just arrived</span>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 font-label-meta text-label-meta px-2 py-0.5 rounded bg-purple-100 text-purple-900 border border-purple-200">
+<span class="material-symbols-outlined text-[14px]">child_care</span>
+                      Pediatric Fast-Track
+                    </span>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">assignment_turned_in</span>
+                      Triage Intake
+                    </span>
+</td>
+<td class="py-3 px-space-md font-label-data text-on-surface">Room 104</td>
+<td class="py-3 px-space-md text-right">
+<button class="px-2 py-1 border border-outline-variant rounded text-xs hover:bg-surface-container">Details</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- RIGHT-HAND SUMMARY & ACTION SIDEBAR (310px width) -->
+<aside class="w-80 flex-shrink-0 flex flex-col gap-space-lg">
+<!-- OPD Summary Metrics Cards -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between pb-space-sm border-b border-outline-variant mb-space-sm">
+<h4 class="font-headline-sm text-body-md text-primary font-bold">OPD Suite Performance</h4>
+<span class="font-label-meta text-label-meta text-secondary font-semibold">TODAY</span>
+</div>
+<div class="grid grid-cols-2 gap-space-sm">
+<!-- Metric 1: Total Seen -->
+<div class="p-space-sm bg-surface-container-low rounded-lg border border-outline-variant">
+<div class="font-label-meta text-[11px] text-on-surface-variant uppercase">Total Seen</div>
+<div class="font-label-token-lg text-headline-lg font-bold text-primary mt-0.5">18</div>
+<div class="font-label-meta text-[10px] text-secondary">Patients discharged</div>
+</div>
+<!-- Metric 2: Currently Waiting -->
+<div class="p-space-sm bg-surface-container-low rounded-lg border border-outline-variant">
+<div class="font-label-meta text-[11px] text-on-surface-variant uppercase">In Waiting</div>
+<div class="font-label-token-lg text-headline-lg font-bold text-secondary mt-0.5">14</div>
+<div class="font-label-meta text-[10px] text-on-surface-variant">Avg wait: 16 mins</div>
+</div>
+<!-- Metric 3: Sent to Diagnostics -->
+<div class="p-space-sm bg-surface-container-low rounded-lg border border-outline-variant">
+<div class="font-label-meta text-[11px] text-on-surface-variant uppercase">At Lab/X-Ray</div>
+<div class="font-label-token-lg text-headline-lg font-bold text-amber-700 mt-0.5">2</div>
+<div class="font-label-meta text-[10px] text-on-surface-variant">Pending reports</div>
+</div>
+<!-- Metric 4: Triage Target SLA -->
+<div class="p-space-sm bg-surface-container-low rounded-lg border border-outline-variant">
+<div class="font-label-meta text-[11px] text-on-surface-variant uppercase">Velocity SLA</div>
+<div class="font-label-token-lg text-headline-lg font-bold text-primary mt-0.5">94%</div>
+<div class="font-label-meta text-[10px] text-secondary">Within &lt;20m target</div>
+</div>
+</div>
+</div>
+<!-- Quick Gate Scanner Launch Tile -->
+<div class="bg-primary-container text-on-primary rounded-xl p-space-md border border-outline-variant shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="inline-block px-2 py-0.5 bg-secondary text-on-secondary rounded text-[10px] font-bold uppercase tracking-wider mb-2">Gate Pass Unit</span>
+<h4 class="font-headline-sm text-body-lg text-white font-bold">QR Token Validator</h4>
+<p class="font-body-sm text-body-sm text-primary-fixed-dim mt-1">Scan walk-in physical slips or digital NFC hospital passes.</p>
+</div>
+<span class="material-symbols-outlined text-secondary-container text-[36px]">qr_code_scanner</span>
+</div>
+<div class="mt-space-md pt-space-sm border-t border-primary/40 flex items-center justify-between">
+<span class="font-label-meta text-label-meta text-primary-fixed-dim">Hardware Scanner Ready</span>
+<button class="px-space-md py-1.5 bg-secondary-fixed text-on-secondary-fixed font-headline-sm text-body-sm font-bold rounded-lg hover:bg-secondary-fixed-dim transition-colors shadow">
+              Open Scanner
+            </button>
+</div>
+</div>
+<!-- Room Staffing & Counter Availability Strip -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-space-md shadow-sm flex-1 flex flex-col">
+<div class="flex items-center justify-between pb-space-sm border-b border-outline-variant mb-space-sm">
+<h5 class="font-headline-sm text-body-sm text-primary font-bold">Adjoining Clinics</h5>
+<span class="material-symbols-outlined text-outline text-[18px]">dns</span>
+</div>
+<div class="space-y-2 flex-1">
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-low border border-outline-variant text-body-sm">
+<div>
+<div class="font-semibold text-primary">Room 102 (Cardiology)</div>
+<div class="text-[11px] text-on-surface-variant">Dr. Vance • Token #CARD-012</div>
+</div>
+<span class="w-2.5 h-2.5 rounded-full bg-secondary" title="Active"></span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-low border border-outline-variant text-body-sm">
+<div>
+<div class="font-semibold text-primary">Room 103 (Pediatrics)</div>
+<div class="text-[11px] text-on-surface-variant">Dr. Thorne • Token #PED-028</div>
+</div>
+<span class="w-2.5 h-2.5 rounded-full bg-secondary" title="Active"></span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-low border border-outline-variant text-body-sm opacity-60">
+<div>
+<div class="font-semibold text-primary">Room 105 (Orthopedics)</div>
+<div class="text-[11px] text-on-surface-variant">Break until 10:30 AM</div>
+</div>
+<span class="w-2.5 h-2.5 rounded-full bg-outline" title="Paused"></span>
+</div>
+</div>
+<div class="mt-2 text-center">
+<span class="font-label-meta text-[11px] text-on-surface-variant">St. Jude Telemetry Mesh v4.8</span>
+</div>
+</div>
+</aside>
+</main>
+</div>
+</body></html>

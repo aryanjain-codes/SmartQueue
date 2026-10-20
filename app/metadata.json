@@ -1,0 +1,6 @@
+{
+  "name": "SmartQueue OPD - Hospital Queue & Triage System",
+  "description": "Functional SmartQueue OPD MVP with real-time patient queue tracking, OPD department selection (General Medicine, Cardiology, Orthopaedics), staff management, and persistent queue state.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

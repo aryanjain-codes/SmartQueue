@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>SmartQueue OPD - Patient Registration</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-surface-variant": "#43474d",
+            "tertiary-fixed": "#6ffbbe",
+            "tertiary": "#00170c",
+            "primary-fixed-dim": "#b0c9e8",
+            "on-secondary-fixed": "#00201d",
+            "surface-tint": "#49607c",
+            "surface-container-high": "#dce9ff",
+            "primary-fixed": "#d1e4ff",
+            "secondary-fixed-dim": "#6bd8cb",
+            "on-tertiary": "#ffffff",
+            "secondary-fixed": "#89f5e7",
+            "on-primary-fixed": "#011d35",
+            "on-secondary": "#ffffff",
+            "surface-container-highest": "#d3e4fe",
+            "primary": "#001428",
+            "surface-dim": "#cbdbf5",
+            "on-background": "#0b1c30",
+            "secondary-container": "#86f2e4",
+            "outline-variant": "#c3c6ce",
+            "surface-container-low": "#eff4ff",
+            "on-secondary-container": "#006f66",
+            "on-error-container": "#93000a",
+            "on-tertiary-container": "#00a270",
+            "outline": "#74777e",
+            "surface-container-lowest": "#ffffff",
+            "inverse-on-surface": "#eaf1ff",
+            "surface-container": "#e5eeff",
+            "background": "#f8f9ff",
+            "inverse-surface": "#213145",
+            "tertiary-container": "#002e1d",
+            "on-secondary-fixed-variant": "#005049",
+            "on-tertiary-fixed-variant": "#005236",
+            "on-primary-fixed-variant": "#314863",
+            "secondary": "#006a61",
+            "surface-variant": "#d3e4fe",
+            "surface": "#f8f9ff",
+            "tertiary-fixed-dim": "#4edea3",
+            "on-error": "#ffffff",
+            "on-tertiary-fixed": "#002113",
+            "on-primary-container": "#7991af",
+            "on-primary": "#ffffff",
+            "error-container": "#ffdad6",
+            "inverse-primary": "#b0c9e8",
+            "surface-bright": "#f8f9ff",
+            "on-surface": "#0b1c30",
+            "error": "#ba1a1a",
+            "primary-container": "#0f2942"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "margin-desktop": "2rem",
+            "margin": "1rem",
+            "space-md": "1rem",
+            "gutter": "1rem",
+            "gutter-desktop": "1.5rem",
+            "space-lg": "1.5rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Inter"],
+            "label-token-md": ["JetBrains Mono"],
+            "body-lg": ["Inter"],
+            "headline-lg-mobile": ["Inter"],
+            "label-meta": ["Inter"],
+            "headline-lg": ["Inter"],
+            "headline-xl": ["Inter"],
+            "body-md": ["Inter"],
+            "headline-xl-mobile": ["Inter"],
+            "body-sm": ["Inter"],
+            "label-data": ["JetBrains Mono"],
+            "label-token-lg": ["JetBrains Mono"],
+            "headline-md": ["Inter"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+            "label-token-md": ["18px", {"lineHeight": "22px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+            "label-meta": ["11px", {"lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+            "headline-xl-mobile": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+            "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+            "label-data": ["13px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+            "label-token-lg": ["32px", {"lineHeight": "36px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+            "headline-md": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-fill {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Subtle focus halo for form elements */
+    .clinical-input:focus {
+      outline: none;
+      border-color: #006a61;
+      box-shadow: 0 0 0 2px rgba(134, 242, 228, 0.45);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-full flex flex-col justify-between selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- Mobile TopAppBar (Brand Anchor Header) -->
+<header class="bg-surface-container-lowest sticky top-0 z-40 w-full shadow-sm">
+<div class="flex justify-between items-center w-full px-space-md max-w-md mx-auto h-14">
+<div class="flex items-center gap-space-sm">
+<button aria-label="Go back" class="p-space-xs text-on-surface hover:bg-surface-container rounded-lg active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="arrow_back">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-primary tracking-tight leading-tight">SmartQueue OPD</span>
+<span class="font-label-meta text-label-meta text-secondary uppercase tracking-wider">St. Jude Memorial Hospital</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center justify-center p-space-xs rounded-full text-on-surface-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-xl" data-icon="account_circle">account_circle</span>
+</span>
+</div>
+</div>
+</header>
+<!-- Step Bar Indicator & Page Title Banner -->
+<section class="bg-surface-container-lowest border-b border-outline-variant/30 px-space-md pt-space-sm pb-space-md max-w-md mx-auto w-full">
+<div class="flex items-center justify-between mb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="h-2 w-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-meta text-label-meta text-secondary uppercase font-bold">New OPD Registration</span>
+</div>
+<span class="font-label-data text-label-data text-on-surface-variant font-medium">Step 1 of 2</span>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight mb-space-xs">Patient &amp; Clinic Details</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Complete clinical triage check-in to secure your digital appointment token.</p>
+<!-- Progress Indicator Bar -->
+<div class="w-full bg-surface-container rounded-full h-1.5 mt-space-sm overflow-hidden flex">
+<div class="bg-secondary h-full rounded-full w-1/2 transition-all duration-300"></div>
+<div class="bg-surface-container-high h-full w-1/2"></div>
+</div>
+</section>
+<!-- Main Patient Registration Form Canvas -->
+<main class="flex-1 max-w-md mx-auto w-full px-space-md py-space-md pb-28">
+<form class="space-y-space-md" id="registration-form" onsubmit="event.preventDefault();">
+<!-- Required micro-copy notification -->
+<div class="flex items-center gap-space-xs px-space-sm py-space-xs bg-surface-container-low rounded-lg border border-outline-variant/40">
+<span class="material-symbols-outlined text-secondary text-base" data-icon="info">info</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Fields marked with <span class="text-error font-semibold">*</span> are required for triage prioritization.</span>
+</div>
+<!-- 1. Full Name Input -->
+<div class="space-y-1">
+<label class="block font-headline-sm text-body-md font-semibold text-primary" for="fullName">
+          Full Legal Name <span class="text-error">*</span>
+</label>
+<div class="relative">
+<input class="clinical-input w-full h-[40px] px-space-md rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-sm placeholder:text-outline/70 transition-all duration-150" id="fullName" name="fullName" placeholder="e.g. Eleanor Vance" required="" type="text" value="Eleanor Vance"/>
+<div class="absolute right-3 top-2.5 text-secondary">
+<span class="material-symbols-outlined text-lg" data-icon="check_circle">check_circle</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">As printed on government health identity or insurance card.</p>
+</div>
+<!-- 2. Dual Grid Column: Age & Gender -->
+<div class="grid grid-cols-2 gap-space-md">
+<!-- Age Field -->
+<div class="space-y-1">
+<label class="block font-headline-sm text-body-md font-semibold text-primary" for="patientAge">
+            Age (Yrs) <span class="text-error">*</span>
+</label>
+<input class="clinical-input w-full h-[40px] px-space-md rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-label-data text-sm placeholder:text-outline/70 transition-all duration-150" id="patientAge" max="125" min="0" name="patientAge" placeholder="e.g. 34" required="" type="number" value="34"/>
+</div>
+<!-- Gender Field -->
+<div class="space-y-1">
+<label class="block font-headline-sm text-body-md font-semibold text-primary" for="patientGender">
+            Gender <span class="text-error">*</span>
+</label>
+<div class="relative">
+<select class="clinical-input w-full h-[40px] pl-space-md pr-8 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-sm appearance-none transition-all duration-150" id="patientGender" name="patientGender" required="">
+<option selected="" value="Female">Female</option>
+<option value="Male">Male</option>
+<option value="Non-Binary">Non-Binary</option>
+<option value="Prefer not to say">Prefer not to say</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 3. Contact Number with Country Code -->
+<div class="space-y-1">
+<label class="block font-headline-sm text-body-md font-semibold text-primary" for="contactNumber">
+          Contact Mobile Number <span class="text-error">*</span>
+</label>
+<div class="flex rounded-lg shadow-none">
+<span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-outline-variant bg-surface-container-low text-primary font-label-data text-xs font-semibold">
+            +1 (US)
+          </span>
+<input class="clinical-input flex-1 min-w-0 block w-full h-[40px] px-space-md rounded-none rounded-r-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-label-data text-sm placeholder:text-outline/70 transition-all duration-150" id="contactNumber" name="contactNumber" placeholder="(555) 234-8910" required="" type="tel" value="(555) 234-8910"/>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Live token summons and SMS alert pings will be dispatched here.</p>
+</div>
+<!-- 4. Hospital / Government Health ID (Optional) -->
+<div class="space-y-1">
+<div class="flex items-center justify-between">
+<label class="block font-headline-sm text-body-md font-semibold text-primary" for="healthId">
+            Health ID / MRN <span class="text-on-surface-variant font-normal text-xs">(Optional)</span>
+</label>
+<div class="group relative flex items-center cursor-pointer text-secondary">
+<span class="material-symbols-outlined text-base" data-icon="help_outline">help_outline</span>
+<span class="font-label-meta text-[10px] ml-0.5 font-bold uppercase tracking-wide">Info</span>
+<!-- Tooltip simulation -->
+<div class="invisible group-hover:visible absolute right-0 bottom-full mb-1 w-52 p-2 bg-primary-container text-inverse-on-surface text-[11px] rounded shadow-md z-20 pointer-events-none">
+              Enter your St. Jude Medical Record Number (MRN) or National Health Card ID if previously registered.
+            </div>
+</div>
+</div>
+<div class="relative">
+<input class="clinical-input w-full h-[40px] px-space-md rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-label-data text-sm placeholder:text-outline/70 transition-all duration-150" id="healthId" name="healthId" placeholder="e.g. SJ-98214-X" type="text"/>
+</div>
+</div>
+<!-- 5. OPD Department Selection with Live Room Queue Metadata -->
+<div class="space-y-1">
+<div class="flex items-center justify-between">
+<label class="block font-headline-sm text-body-md font-semibold text-primary" for="opdDepartment">
+            Select OPD Department <span class="text-error">*</span>
+</label>
+<span class="inline-flex items-center gap-1 font-label-meta text-[11px] text-secondary font-semibold bg-secondary-container/30 px-2 py-0.5 rounded">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+            6 Active Desks
+          </span>
+</div>
+<div class="relative">
+<select class="clinical-input w-full h-[42px] pl-space-md pr-10 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-sm appearance-none transition-all duration-150" id="opdDepartment" name="opdDepartment" required="">
+<option selected="" value="General Medicine">General Medicine (Room 104 - 6 waiting)</option>
+<option value="Pediatrics">Pediatrics (Room 202 - 3 waiting)</option>
+<option value="Orthopedics">Orthopedics (Room 108 - 8 waiting)</option>
+<option value="Cardiology">Cardiology (Room 310 - 4 waiting)</option>
+<option value="ENT">ENT (Room 114 - 2 waiting)</option>
+<option value="Dermatology">Dermatology (Room 216 - 5 waiting)</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="unfold_more">unfold_more</span>
+</div>
+</div>
+<!-- Real-time Department wait indicator banner -->
+<div class="flex items-center gap-2 p-2 bg-surface-container-low rounded border border-outline-variant/30 text-xs">
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="schedule">schedule</span>
+<span class="font-body-sm text-on-surface-variant">Est. Triage Queue Time: <strong class="text-primary font-semibold">18–25 mins</strong> at Room 104</span>
+</div>
+</div>
+<!-- 6. Chief Medical Complaint Textarea -->
+<div class="space-y-1">
+<div class="flex justify-between items-baseline">
+<label class="block font-headline-sm text-body-md font-semibold text-primary" for="medicalComplaint">
+            Primary Reason / Chief Complaint <span class="text-error">*</span>
+</label>
+<span class="font-label-meta text-xs text-on-surface-variant font-medium">Brief clinical note</span>
+</div>
+<textarea class="clinical-input w-full p-space-sm rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-sm placeholder:text-outline/70 transition-all duration-150 resize-none" id="medicalComplaint" name="medicalComplaint" required="" rows="3">Mild recurrent migraine and photophobia for 3 days</textarea>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Provides attending triage nurses initial context for priority level routing.</p>
+</div>
+<!-- 7. Critical Allergies Toggle/Pill Multi-Select -->
+<div class="space-y-2 pt-1">
+<label class="block font-headline-sm text-body-md font-semibold text-primary">
+          Known Critical Allergies <span class="text-error">*</span>
+</label>
+<div class="grid grid-cols-3 gap-2">
+<!-- Allergy Option 1 (Penicillin - Active/Selected) -->
+<label class="relative flex flex-col items-center justify-center p-2.5 rounded-lg border-2 border-secondary bg-secondary-container/20 cursor-pointer select-none transition-all active:scale-95 text-center">
+<input checked="" class="sr-only" name="allergies" type="checkbox" value="Penicillin"/>
+<span class="material-symbols-outlined text-secondary text-base mb-1" data-icon="medication">medication</span>
+<span class="font-headline-sm text-xs font-bold text-secondary">Penicillin</span>
+<span class="absolute top-1 right-1 text-secondary">
+<span class="material-symbols-outlined text-xs" data-icon="check_circle">check_circle</span>
+</span>
+</label>
+<!-- Allergy Option 2 (Sulfa Drugs - Unselected) -->
+<label class="relative flex flex-col items-center justify-center p-2.5 rounded-lg border border-outline-variant bg-surface-container-lowest cursor-pointer select-none hover:bg-surface-container-low transition-all active:scale-95 text-center">
+<input class="sr-only" name="allergies" type="checkbox" value="Sulfa Drugs"/>
+<span class="material-symbols-outlined text-on-surface-variant text-base mb-1" data-icon="vaccines">vaccines</span>
+<span class="font-body-md text-xs font-medium text-on-surface">Sulfa Drugs</span>
+</label>
+<!-- Allergy Option 3 (None Reported - Unselected) -->
+<label class="relative flex flex-col items-center justify-center p-2.5 rounded-lg border border-outline-variant bg-surface-container-lowest cursor-pointer select-none hover:bg-surface-container-low transition-all active:scale-95 text-center">
+<input class="sr-only" name="allergies" type="checkbox" value="None reported"/>
+<span class="material-symbols-outlined text-on-surface-variant text-base mb-1" data-icon="do_not_disturb_on">do_not_disturb_on</span>
+<span class="font-body-md text-xs font-medium text-on-surface">None reported</span>
+</label>
+</div>
+</div>
+<!-- Mandatory Consent Box (Clinical Slate/Teal Card) -->
+<section class="mt-4 p-space-md rounded-xl bg-surface-container-low border border-outline-variant/60 space-y-space-sm">
+<div class="flex items-start gap-space-sm">
+<div class="flex items-center h-5 mt-0.5">
+<input checked="" class="w-4 h-4 rounded text-secondary border-outline focus:ring-secondary focus:ring-offset-0 focus:ring-1 cursor-pointer" id="consent" name="consent" required="" type="checkbox"/>
+</div>
+<div class="text-xs">
+<label class="font-body-md text-xs text-on-surface leading-tight select-none cursor-pointer" for="consent">
+              I consent to St. Jude Hospital storing and sharing my queue and triage info with attending clinical staff for this OPD visit. <span class="text-error font-bold">*</span>
+</label>
+</div>
+</div>
+<div class="flex items-start gap-2 pt-2 border-t border-outline-variant/30">
+<span class="material-symbols-outlined text-secondary text-sm flex-shrink-0 mt-0.5" data-icon="lock">lock</span>
+<p class="font-body-sm text-[11px] text-on-surface-variant leading-relaxed">
+            Your medical history is never shared publicly or stored in unencrypted QR codes.
+          </p>
+</div>
+</section>
+<!-- Action Buttons -->
+<div class="pt-space-xs space-y-space-sm">
+<!-- Primary Action: Generate Token -->
+<button class="w-full h-11 bg-primary text-on-primary rounded-lg font-headline-sm text-sm font-semibold flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform duration-150 hover:bg-primary-container" type="button">
+<span>Generate My Digital Token</span>
+<span class="material-symbols-outlined text-secondary-fixed text-lg" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<!-- Secondary Action: Lookup Token -->
+<button class="w-full h-10 bg-transparent hover:bg-surface-container text-secondary font-headline-sm text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors active:scale-[0.99]" type="button">
+<span class="material-symbols-outlined text-base" data-icon="manage_search">manage_search</span>
+<span>Already registered? Look up Token</span>
+</button>
+</div>
+</form>
+</main>
+<!-- BottomNavBar (Shared Component JSON Blueprint) -->
+<!-- Active Destination logic applied autonomously: 'OPD Check-In' is the 3rd label -->
+<nav aria-label="Bottom Navigation" class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-space-sm py-space-xs pb-safe bg-surface-container-lowest shadow-sm">
+<!-- Destination 1: Live Queue -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-sm py-space-xs hover:text-primary transition-colors active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="queue">queue</span>
+<span class="font-label-meta text-[11px] font-semibold mt-0.5">Live Queue</span>
+</a>
+<!-- Destination 2: My Token -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-sm py-space-xs hover:text-primary transition-colors active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span class="font-label-meta text-[11px] font-semibold mt-0.5">My Token</span>
+</a>
+<!-- Destination 3: OPD Check-In (ACTIVE STATE EXECUTION) -->
+<a class="flex flex-col items-center justify-center text-secondary bg-secondary-container/20 rounded-lg px-space-sm py-space-xs active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined text-xl material-symbols-fill" data-icon="assignment" style="font-variation-settings: 'FILL' 1;">assignment</span>
+<span class="font-label-meta text-[11px] font-semibold mt-0.5 text-secondary">OPD Check-In</span>
+</a>
+<!-- Destination 4: Help -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-space-sm py-space-xs hover:text-primary transition-colors active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="help_outline">help_outline</span>
+<span class="font-label-meta text-[11px] font-semibold mt-0.5">Help</span>
+</a>
+</nav>
+<script>
+    // Lightweight UI interactive feedback for allergy pills
+    document.querySelectorAll('input[name="allergies"]').forEach(checkbox => {
+      checkbox.addEventListener('change', function() {
+        const label = this.closest('label');
+        if (this.checked) {
+          label.classList.add('border-secondary', 'bg-secondary-container/20');
+          label.classList.remove('border-outline-variant', 'bg-surface-container-lowest');
+        } else {
+          label.classList.remove('border-secondary', 'bg-secondary-container/20');
+          label.classList.add('border-outline-variant', 'bg-surface-container-lowest');
+        }
+      });
+    });
+  </script>
+</body></html>
