@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import {
   OPDDepartment,
@@ -7,14 +8,20 @@ import {
   PatientQueueView,
   DepartmentSummary,
   SmartQueueState,
+  PublicQueueStateDTO,
+  PublicQueuePatientDTO,
   RegistrationPayload,
   TriageSeverity,
+  GateClearanceDTO,
+  GateScanLogEntry,
+  StaffRole,
 } from '../src/types/queue';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_DIR = path.resolve(__dirname, '../data');
 const DATA_FILE = path.join(DATA_DIR, 'smartqueue.json');
+const SCANS_FILE = path.join(DATA_DIR, 'gate_scans.json');
 
 const DEPARTMENT_CONFIGS: Record<
   OPDDepartment,
@@ -53,16 +60,31 @@ const DEPARTMENT_CONFIGS: Record<
   },
 };
 
+export function maskFullName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length <= 1) return fullName;
+  const first = parts[0];
+  const lastInitial = parts[parts.length - 1].charAt(0).toUpperCase();
+  return `${first} ${lastInitial}.`;
+}
+
+export function generateSecurePassId(): string {
+  // 16 bytes = 32 hex characters of cryptographic entropy (128 bits)
+  const token = crypto.randomBytes(16).toString('hex').toUpperCase();
+  return `SQ-PASS-${token}-B`;
+}
+
 function generateInitialSeed(): PatientRecord[] {
   const now = Date.now();
   const thirtyDaysAhead = new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString();
+  const pastExpiredDate = new Date(now - 5 * 24 * 60 * 60 * 1000).toISOString(); // 5 days ago
 
   return [
     // General Medicine (Serving + Waiting)
     {
       id: 'SJH-2025-8821',
       token: 'MED-039',
-      passId: 'SQ-PASS-88210-B',
+      passId: 'SQ-PASS-88210A1B2C3D4E5F6789-B',
       passExpiry: thirtyDaysAhead,
       passStatus: 'active',
       fullName: 'Arthur Pendelton',
@@ -84,7 +106,7 @@ function generateInitialSeed(): PatientRecord[] {
     {
       id: 'SJH-2025-8832',
       token: 'MED-040',
-      passId: 'SQ-PASS-88320-B',
+      passId: 'SQ-PASS-88320C3D4E5F6A7B8C9D-B',
       passExpiry: thirtyDaysAhead,
       passStatus: 'active',
       fullName: 'David Ross',
@@ -105,7 +127,7 @@ function generateInitialSeed(): PatientRecord[] {
     {
       id: 'SJH-2025-8837',
       token: 'MED-041',
-      passId: 'SQ-PASS-88370-B',
+      passId: 'SQ-PASS-88370D4E5F6A7B8C9D0E-B',
       passExpiry: thirtyDaysAhead,
       passStatus: 'active',
       fullName: 'Fatima Al-Mansoor',
@@ -126,7 +148,7 @@ function generateInitialSeed(): PatientRecord[] {
     {
       id: 'SJH-2025-8841',
       token: 'MED-042',
-      passId: 'SQ-PASS-90412-B',
+      passId: 'SQ-PASS-90412E5F6A7B8C9D0E1F-B',
       passExpiry: thirtyDaysAhead,
       passStatus: 'active',
       fullName: 'Eleanor Vance',
@@ -147,7 +169,7 @@ function generateInitialSeed(): PatientRecord[] {
     {
       id: 'SJH-2025-8846',
       token: 'MED-043',
-      passId: 'SQ-PASS-90460-B',
+      passId: 'SQ-PASS-90460F6A7B8C9D0E1F2A-B',
       passExpiry: thirtyDaysAhead,
       passStatus: 'active',
       fullName: 'Robert Chen',
@@ -168,7 +190,7 @@ function generateInitialSeed(): PatientRecord[] {
     {
       id: 'SJH-2025-8850',
       token: 'MED-044',
-      passId: 'SQ-PASS-90500-B',
+      passId: 'SQ-PASS-90500A7B8C9D0E1F2A3B-B',
       passExpiry: thirtyDaysAhead,
       passStatus: 'active',
       fullName: 'Clara Oswald',
@@ -191,7 +213,7 @@ function generateInitialSeed(): PatientRecord[] {
     {
       id: 'SJH-2025-7711',
       token: 'CARD-012',
-      passId: 'SQ-PASS-77110-B',
+      passId: 'SQ-PASS-77110B8C9D0E1F2A3B4C-B',
       passExpiry: thirtyDaysAhead,
       passStatus: 'active',
       fullName: 'Marcus Brody',
@@ -213,7 +235,7 @@ function generateInitialSeed(): PatientRecord[] {
     {
       id: 'SJH-2025-7719',
       token: 'CARD-013',
-      passId: 'SQ-PASS-77190-B',
+      passId: 'SQ-PASS-77190C9D0E1F2A3B4C5D-B',
       passExpiry: thirtyDaysAhead,
       passStatus: 'active',
       fullName: 'Elena Gomez',
@@ -234,7 +256,7 @@ function generateInitialSeed(): PatientRecord[] {
     {
       id: 'SJH-2025-7724',
       token: 'CARD-014',
-      passId: 'SQ-PASS-77240-B',
+      passId: 'SQ-PASS-77240D0E1F2A3B4C5D6E-B',
       passExpiry: thirtyDaysAhead,
       passStatus: 'active',
       fullName: 'Harold Finch',
@@ -257,7 +279,7 @@ function generateInitialSeed(): PatientRecord[] {
     {
       id: 'SJH-2025-6610',
       token: 'ORTH-024',
-      passId: 'SQ-PASS-66100-B',
+      passId: 'SQ-PASS-66100E1F2A3B4C5D6E7F-B',
       passExpiry: thirtyDaysAhead,
       passStatus: 'active',
       fullName: 'Thomas Wayne',
@@ -279,7 +301,7 @@ function generateInitialSeed(): PatientRecord[] {
     {
       id: 'SJH-2025-6618',
       token: 'ORTH-025',
-      passId: 'SQ-PASS-66180-B',
+      passId: 'SQ-PASS-66180F2A3B4C5D6E7F8A-B',
       passExpiry: thirtyDaysAhead,
       passStatus: 'active',
       fullName: 'Samantha Reed',
@@ -300,7 +322,7 @@ function generateInitialSeed(): PatientRecord[] {
     {
       id: 'SJH-2025-6622',
       token: 'ORTH-026',
-      passId: 'SQ-PASS-66220-B',
+      passId: 'SQ-PASS-66220A3B4C5D6E7F8A9B-B',
       passExpiry: thirtyDaysAhead,
       passStatus: 'active',
       fullName: 'James Miller',
@@ -318,35 +340,106 @@ function generateInitialSeed(): PatientRecord[] {
       location: 'Waiting Hall C',
       registeredAt: new Date(now - 8 * 60 * 1000).toISOString(),
     },
+
+    // Explicit Test Fixture: Genuinely Expired Pass (Issued 35 days ago, expired 5 days ago)
+    {
+      id: 'SJH-2025-9988',
+      token: 'MED-088',
+      passId: 'SQ-PASS-EXPIRED-TEST-FIXTURE-B',
+      passExpiry: pastExpiredDate,
+      passStatus: 'expired',
+      fullName: 'Walter White',
+      age: 52,
+      gender: 'Male',
+      contactNumber: '(555) 391-4401',
+      mrn: 'PT-99880',
+      department: 'General Medicine',
+      room: 'Room 104',
+      doctor: 'Dr. Sarah Jenkins, MD',
+      chiefComplaint: 'Routine pulmonary checkup and annual wellness evaluation',
+      allergies: ['None reported'],
+      status: 'COMPLETED',
+      triageSeverity: 'Routine',
+      location: 'Discharged / Lapsed Pass',
+      registeredAt: new Date(now - 35 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+
+    // Explicit Test Fixture: Genuinely Revoked Pass (Flagged by Infection Control)
+    {
+      id: 'SJH-2025-9999',
+      token: 'MED-089',
+      passId: 'SQ-PASS-REVOKED-TEST-FIXTURE-B',
+      passExpiry: thirtyDaysAhead,
+      passStatus: 'revoked',
+      fullName: 'Jesse Pinkman',
+      age: 26,
+      gender: 'Male',
+      contactNumber: '(555) 902-8819',
+      mrn: 'PT-99990',
+      department: 'General Medicine',
+      room: 'Room 104',
+      doctor: 'Dr. Sarah Jenkins, MD',
+      chiefComplaint: 'External screening required per security protocol',
+      allergies: ['None reported'],
+      status: 'COMPLETED',
+      triageSeverity: 'Urgent Priority',
+      location: 'External Screening Tent 03',
+      registeredAt: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    },
   ];
 }
 
 class QueueDatabase {
   private patients: PatientRecord[] = [];
+  private scanLogs: GateScanLogEntry[] = [];
 
   constructor() {
-    this.ensureDataFile();
+    this.ensureDataFiles();
   }
 
-  private ensureDataFile() {
+  private ensureDataFiles() {
     try {
       if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });
       }
+
       if (fs.existsSync(DATA_FILE)) {
         const raw = fs.readFileSync(DATA_FILE, 'utf-8');
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
           this.patients = parsed;
-          return;
+          // Ensure explicit test fixtures exist for verification
+          const seeds = generateInitialSeed();
+          let added = false;
+          for (const s of seeds) {
+            if (!this.patients.some((p) => p.passId === s.passId || p.token === s.token)) {
+              this.patients.push(s);
+              added = true;
+            }
+          }
+          if (added) this.persist();
+        } else {
+          this.patients = generateInitialSeed();
+          this.persist();
+        }
+      } else {
+        this.patients = generateInitialSeed();
+        this.persist();
+      }
+
+      // Scans file
+      if (fs.existsSync(SCANS_FILE)) {
+        const rawScans = fs.readFileSync(SCANS_FILE, 'utf-8');
+        const parsedScans = JSON.parse(rawScans);
+        if (Array.isArray(parsedScans)) {
+          this.scanLogs = parsedScans;
         }
       }
     } catch (err) {
-      console.warn('Error reading data file, initializing fresh seed', err);
+      console.warn('Error reading data files, initializing fresh seed', err);
+      this.patients = generateInitialSeed();
+      this.persist();
     }
-    // Initialize fresh seed
-    this.patients = generateInitialSeed();
-    this.persist();
   }
 
   private persist() {
@@ -355,6 +448,7 @@ class QueueDatabase {
         fs.mkdirSync(DATA_DIR, { recursive: true });
       }
       fs.writeFileSync(DATA_FILE, JSON.stringify(this.patients, null, 2), 'utf-8');
+      fs.writeFileSync(SCANS_FILE, JSON.stringify(this.scanLogs.slice(-100), null, 2), 'utf-8');
     } catch (err) {
       console.error('Failed to persist database to file:', err);
     }
@@ -362,11 +456,15 @@ class QueueDatabase {
 
   public resetDemo() {
     this.patients = generateInitialSeed();
+    this.scanLogs = [];
     this.persist();
-    return this.getState();
+    return this.getPublicState();
   }
 
-  public getState(): SmartQueueState {
+  /**
+   * Public queue state: Sanitized to remove all clinical notes, complaints, allergies, and contact numbers.
+   */
+  public getPublicState(): PublicQueueStateDTO {
     const deptKeys: OPDDepartment[] = ['General Medicine', 'Cardiology', 'Orthopaedics'];
     const departments = {} as Record<OPDDepartment, DepartmentSummary>;
 
@@ -388,7 +486,6 @@ class QueueDatabase {
       totalServed += served.length;
       totalLab += lab.length;
 
-      // Calculate average wait time in minutes for this department
       const deptWaitMins = Math.max(3, Math.round(waiting.length * (config.avgMinutes / config.activeDesks)));
       totalWaitTimeAccum += deptWaitMins;
       waitTimeCount++;
@@ -397,6 +494,19 @@ class QueueDatabase {
       if (serving && serving.calledAt) {
         currentConsultationSeconds = Math.max(0, Math.floor((Date.now() - new Date(serving.calledAt).getTime()) / 1000));
       }
+
+      // Sanitized serving patient representation for public state
+      const publicServing = serving
+        ? ({
+            ...serving,
+            fullName: maskFullName(serving.fullName),
+            contactNumber: undefined,
+            mrn: undefined,
+            chiefComplaint: undefined,
+            allergies: undefined,
+            notes: undefined,
+          } as unknown as PatientRecord)
+        : null;
 
       departments[dept] = {
         department: dept,
@@ -407,9 +517,9 @@ class QueueDatabase {
         active: true,
         activeDesks: config.activeDesks,
         nowServingToken: serving ? serving.token : null,
-        nowServingPatient: serving,
+        nowServingPatient: publicServing,
         waitingCount: waiting.length,
-        totalServedToday: 18 + served.length, // Include hospital baseline
+        totalServedToday: 18 + served.length,
         averageWaitMinutes: deptWaitMins,
         currentConsultationSeconds,
       };
@@ -417,12 +527,25 @@ class QueueDatabase {
 
     const avgWait = waitTimeCount > 0 ? Math.round(totalWaitTimeAccum / waitTimeCount) : 16;
 
+    // Public sanitized patient list (no medical details, no contact info)
+    const sanitizedPatients: PublicQueuePatientDTO[] = this.patients.map((p, idx) => ({
+      id: `PT-**${p.token.replace(/\D/g, '').slice(-3) || '000'}`,
+      token: p.token,
+      department: p.department,
+      room: p.room,
+      status: p.status,
+      triageSeverity: p.triageSeverity,
+      location: p.location,
+      registeredAt: p.registeredAt,
+      position: p.status === 'WAITING' ? idx + 1 : undefined,
+    }));
+
     return {
-      patients: this.patients,
+      patients: sanitizedPatients,
       departments,
       lastUpdated: new Date().toISOString(),
       systemMetrics: {
-        totalCheckedIn: 342 + this.patients.length - 12,
+        totalCheckedIn: 342 + this.patients.length - 14,
         totalServed: 18 + totalServed,
         inWaiting: totalWaiting,
         atLab: 2 + totalLab,
@@ -432,13 +555,34 @@ class QueueDatabase {
     };
   }
 
-  public getPatientView(tokenOrId: string): PatientQueueView | null {
+  /**
+   * Protected Clinical Queue State: Returned only to authorized clinical staff
+   */
+  public getClinicalState(role?: StaffRole): SmartQueueState {
+    if (role !== 'clinical') {
+      throw new Error('Access denied: Clinical staff role required.');
+    }
+
+    const publicState = this.getPublicState();
+    return {
+      patients: this.patients, // Full PatientRecord with clinical notes, allergies, complaints
+      departments: publicState.departments,
+      lastUpdated: publicState.lastUpdated,
+      systemMetrics: publicState.systemMetrics,
+    };
+  }
+
+  /**
+   * Patient self-lookup by their own token or pass ID.
+   * Returns their own record with live queue position, but cannot view other patients' records.
+   */
+  public getPatientSelfView(tokenOrId: string): PatientQueueView | null {
     const query = tokenOrId.trim().toUpperCase();
     const patient = this.patients.find(
       (p) =>
         p.token.toUpperCase() === query ||
-        p.id.toUpperCase() === query ||
         p.passId.toUpperCase() === query ||
+        p.id.toUpperCase() === query ||
         (p.mrn && p.mrn.toUpperCase() === query)
     );
 
@@ -458,14 +602,6 @@ class QueueDatabase {
       position = idx >= 0 ? idx + 1 : 1;
       totalAhead = idx >= 0 ? idx : 0;
       estimatedWaitMinutes = Math.max(2, Math.round(position * (deptConfig.avgMinutes / deptConfig.activeDesks)));
-    } else if (patient.status === 'SERVING') {
-      position = 0;
-      totalAhead = 0;
-      estimatedWaitMinutes = 0;
-    } else {
-      position = 0;
-      totalAhead = 0;
-      estimatedWaitMinutes = 0;
     }
 
     return {
@@ -477,11 +613,29 @@ class QueueDatabase {
     };
   }
 
+  /**
+   * Protected clinical patient chart lookup: requires clinical staff authorization
+   */
+  public getClinicalPatientRecord(tokenOrId: string, role?: StaffRole): PatientRecord | null {
+    if (role !== 'clinical') {
+      throw new Error('Access denied: Clinical role required to view patient chart.');
+    }
+    const query = tokenOrId.trim().toUpperCase();
+    return (
+      this.patients.find(
+        (p) =>
+          p.token.toUpperCase() === query ||
+          p.passId.toUpperCase() === query ||
+          p.id.toUpperCase() === query
+      ) || null
+    );
+  }
+
   public registerPatient(payload: RegistrationPayload): PatientQueueView {
     const dept = payload.department in DEPARTMENT_CONFIGS ? payload.department : 'General Medicine';
     const config = DEPARTMENT_CONFIGS[dept];
 
-    // Determine token number
+    // Determine sequential token number
     const deptPatients = this.patients.filter((p) => p.department === dept);
     let nextNum = 45;
     if (dept === 'Cardiology') nextNum = 15;
@@ -497,15 +651,18 @@ class QueueDatabase {
 
     const token = `${config.prefix}-${String(nextNum).padStart(3, '0')}`;
     const id = `SJH-2025-${Math.floor(1000 + Math.random() * 9000)}`;
-    const passId = `SQ-PASS-${Math.floor(10000 + Math.random() * 90000)}-B`;
+
+    // Cryptographically secure, unguessable pass token (Priority 2)
+    const passId = generateSecurePassId();
+
     const now = Date.now();
+    // Exactly 30 days validity period (Priority 2 & 3)
     const passExpiry = new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Determine triage severity based on clinical heuristics
     let triageSeverity: TriageSeverity = 'Routine';
     const complaintLower = (payload.chiefComplaint || '').toLowerCase();
     const urgentKeywords = ['chest pain', 'severe', 'acute', 'fracture', 'shortness of breath', 'bleeding', 'unconscious', 'emergency'];
-    
+
     if (urgentKeywords.some((k) => complaintLower.includes(k))) {
       triageSeverity = 'Urgent Priority';
     } else if (payload.age >= 65) {
@@ -539,12 +696,15 @@ class QueueDatabase {
     this.patients.push(newRecord);
     this.persist();
 
-    return this.getPatientView(newRecord.token)!;
+    return this.getPatientSelfView(newRecord.token)!;
   }
 
-  public callNext(department: OPDDepartment): { previous: PatientRecord | null; current: PatientRecord | null } {
+  public callNext(department: OPDDepartment, role?: StaffRole): { previous: PatientRecord | null; current: PatientRecord | null } {
+    if (role !== 'clinical') {
+      throw new Error('Access denied: Clinical staff role required to call patients.');
+    }
+
     const config = DEPARTMENT_CONFIGS[department];
-    // Find currently serving in this department, if any
     const currentServing = this.patients.find((p) => p.department === department && p.status === 'SERVING');
     if (currentServing) {
       currentServing.status = 'COMPLETED';
@@ -552,9 +712,7 @@ class QueueDatabase {
       currentServing.location = 'Discharged / Consultation Complete';
     }
 
-    // Find next waiting patient in this department (respecting urgent priority first if any, or FIFO)
     const waitingList = this.patients.filter((p) => p.department === department && p.status === 'WAITING');
-    // Sort urgent priority first, otherwise FIFO by registeredAt
     waitingList.sort((a, b) => {
       const aUrgent = a.triageSeverity === 'Urgent Priority' ? 1 : 0;
       const bUrgent = b.triageSeverity === 'Urgent Priority' ? 1 : 0;
@@ -573,7 +731,11 @@ class QueueDatabase {
     return { previous: currentServing || null, current: nextPatient };
   }
 
-  public completeConsultation(department: OPDDepartment): PatientRecord | null {
+  public completeConsultation(department: OPDDepartment, role?: StaffRole): PatientRecord | null {
+    if (role !== 'clinical') {
+      throw new Error('Access denied: Clinical staff role required to complete consultation.');
+    }
+
     const currentServing = this.patients.find((p) => p.department === department && p.status === 'SERVING');
     if (currentServing) {
       currentServing.status = 'COMPLETED';
@@ -585,7 +747,11 @@ class QueueDatabase {
     return null;
   }
 
-  public holdForLab(token: string): PatientRecord | null {
+  public holdForLab(token: string, role?: StaffRole): PatientRecord | null {
+    if (role !== 'clinical') {
+      throw new Error('Access denied: Clinical staff role required to place lab hold.');
+    }
+
     const patient = this.patients.find((p) => p.token.toUpperCase() === token.toUpperCase());
     if (patient) {
       patient.status = 'HOLD_LAB';
@@ -596,13 +762,16 @@ class QueueDatabase {
     return null;
   }
 
-  public callSpecificToken(token: string): PatientRecord | null {
+  public callSpecificToken(token: string, role?: StaffRole): PatientRecord | null {
+    if (role !== 'clinical') {
+      throw new Error('Access denied: Clinical staff role required to call token.');
+    }
+
     const target = this.patients.find((p) => p.token.toUpperCase() === token.toUpperCase());
     if (!target) return null;
 
     const dept = target.department;
     const config = DEPARTMENT_CONFIGS[dept];
-    // Complete previous serving
     const currentServing = this.patients.find((p) => p.department === dept && p.status === 'SERVING');
     if (currentServing && currentServing.id !== target.id) {
       currentServing.status = 'COMPLETED';
@@ -617,69 +786,187 @@ class QueueDatabase {
     return target;
   }
 
-  public verifyPassOrToken(code: string): {
-    outcome: 'VALID' | 'EXPIRED' | 'REVOKED' | 'INVALID';
-    patient?: PatientRecord;
-    message: string;
-    clearanceLevel?: string;
-  } {
+  /**
+   * Secure Gate Pass Verification (Priority 1, 2, & 3):
+   * - Requires authenticated staff role ('security' or 'clinical').
+   * - Returns ONLY GateClearanceDTO with masked name and operational details.
+   * - Strictly excludes contactNumber, MRN, chiefComplaint, allergies, and clinical notes.
+   * - Evaluates true server-side expiration (30 days from issue).
+   * - Evaluates true server-side revocation.
+   * - Detects duplicate scans within a 5-minute cooldown window.
+   * - Logs every scan event persistently.
+   */
+  public verifyGatePass(
+    code: string,
+    role: StaffRole,
+    operatorId = 'SEC-402',
+    gateId = 'Gate 02'
+  ): GateClearanceDTO {
+    if (role !== 'security' && role !== 'clinical') {
+      throw new Error('Unauthorized: Valid Security or Clinical credentials required for gate access verification.');
+    }
+
+    const now = new Date();
+    const scanTimestamp = now.toISOString();
     const query = code.trim().toUpperCase();
+
     if (!query) {
-      return { outcome: 'INVALID', message: 'Pass or token code is empty.' };
-    }
-
-    // Check special simulation codes
-    if (query.includes('EXP')) {
+      const entry: GateScanLogEntry = {
+        id: crypto.randomUUID(),
+        passIdOrCode: 'EMPTY',
+        outcome: 'INVALID',
+        timestamp: scanTimestamp,
+        operatorId,
+        gateId,
+        isDuplicate: false,
+      };
+      this.scanLogs.push(entry);
+      this.persist();
       return {
-        outcome: 'EXPIRED',
-        message: 'Pass validity period has lapsed (Over 30 days). Patient must register for a renewal token.',
+        outcome: 'INVALID',
+        message: 'Empty pass code presented.',
+        scanTimestamp,
       };
     }
-    if (query.includes('FLAG') || query.includes('REV')) {
-      return {
-        outcome: 'REVOKED',
-        message: 'Pass flagged by hospital security / Infection Control. Access suspended.',
-      };
-    }
 
+    // Look up patient matching passId or token
     const patient = this.patients.find(
-      (p) =>
-        p.passId.toUpperCase() === query ||
-        p.token.toUpperCase() === query ||
-        p.id.toUpperCase() === query
+      (p) => p.passId.toUpperCase() === query || p.token.toUpperCase() === query
     );
 
     if (!patient) {
+      const entry: GateScanLogEntry = {
+        id: crypto.randomUUID(),
+        passIdOrCode: query.substring(0, 32),
+        outcome: 'INVALID',
+        timestamp: scanTimestamp,
+        operatorId,
+        gateId,
+        isDuplicate: false,
+      };
+      this.scanLogs.push(entry);
+      this.persist();
       return {
         outcome: 'INVALID',
-        message: 'Unrecognized QR payload. Non-SmartQueue cryptographic signature.',
+        message: 'Unrecognized pass or token. Non-SmartQueue signature.',
+        scanTimestamp,
       };
     }
 
-    // Check expiration
-    const expiry = new Date(patient.passExpiry).getTime();
-    if (Date.now() > expiry || patient.passStatus === 'expired') {
+    const maskedName = maskFullName(patient.fullName);
+
+    // 1. Evaluate True Expiration (Date.now() > passExpiry or explicit status)
+    const expiryMs = new Date(patient.passExpiry).getTime();
+    if (Date.now() > expiryMs || patient.passStatus === 'expired') {
+      const entry: GateScanLogEntry = {
+        id: crypto.randomUUID(),
+        passIdOrCode: patient.passId,
+        outcome: 'EXPIRED',
+        timestamp: scanTimestamp,
+        operatorId,
+        gateId,
+        patientNameMasked: maskedName,
+        token: patient.token,
+        isDuplicate: false,
+      };
+      this.scanLogs.push(entry);
+      this.persist();
+
       return {
         outcome: 'EXPIRED',
-        patient,
-        message: `Pass for ${patient.fullName} expired. Please visit OPD reception desk.`,
+        message: `Pass expired on ${new Date(patient.passExpiry).toLocaleDateString()}. Re-checkin required at Central OPD Desk.`,
+        passId: patient.passId,
+        token: patient.token,
+        patientNameMasked: maskedName,
+        passExpiry: patient.passExpiry,
+        scanTimestamp,
       };
     }
 
+    // 2. Evaluate True Revocation
     if (patient.passStatus === 'revoked') {
+      const entry: GateScanLogEntry = {
+        id: crypto.randomUUID(),
+        passIdOrCode: patient.passId,
+        outcome: 'REVOKED',
+        timestamp: scanTimestamp,
+        operatorId,
+        gateId,
+        patientNameMasked: maskedName,
+        token: patient.token,
+        isDuplicate: false,
+      };
+      this.scanLogs.push(entry);
+      this.persist();
+
       return {
         outcome: 'REVOKED',
-        patient,
-        message: `Pass for ${patient.fullName} has been revoked by hospital triage.`,
+        message: 'Pass revoked / flagged by hospital security. Entry suspended; escort required.',
+        passId: patient.passId,
+        token: patient.token,
+        patientNameMasked: maskedName,
+        scanTimestamp,
       };
     }
 
+    // 3. Safe Duplicate Scan Detection (5-minute cooldown window)
+    const DUPLICATE_COOLDOWN_MS = 5 * 60 * 1000;
+    const recentScan = this.scanLogs
+      .slice()
+      .reverse()
+      .find(
+        (log) =>
+          log.passIdOrCode.toUpperCase() === patient.passId.toUpperCase() &&
+          log.outcome === 'VALID' &&
+          now.getTime() - new Date(log.timestamp).getTime() < DUPLICATE_COOLDOWN_MS
+      );
+
+    const isDuplicate = !!recentScan;
+    let duplicateWarning: string | undefined = undefined;
+
+    if (isDuplicate && recentScan) {
+      const elapsedSeconds = Math.max(1, Math.round((now.getTime() - new Date(recentScan.timestamp).getTime()) / 1000));
+      const elapsedMins = Math.floor(elapsedSeconds / 60);
+      const timeStr = elapsedMins > 0 ? `${elapsedMins}m ${elapsedSeconds % 60}s` : `${elapsedSeconds}s`;
+      duplicateWarning = `Duplicate scan detected: Pass was already verified ${timeStr} ago at ${recentScan.gateId}. Verify visitor credentials.`;
+    }
+
+    // Record verified scan log
+    const entry: GateScanLogEntry = {
+      id: crypto.randomUUID(),
+      passIdOrCode: patient.passId,
+      outcome: 'VALID',
+      timestamp: scanTimestamp,
+      operatorId,
+      gateId,
+      patientNameMasked: maskedName,
+      token: patient.token,
+      isDuplicate,
+    };
+    this.scanLogs.push(entry);
+    this.persist();
+
+    // Return sanitized operational DTO - strictly NO clinical details
     return {
       outcome: 'VALID',
-      patient,
-      message: 'Access granted. Clearance Level: Tier-1 Ambulatory.',
+      message: isDuplicate
+        ? 'Access verified with duplicate warning.'
+        : 'Access granted. Clearance Level: Tier-1 Ambulatory.',
+      passId: patient.passId,
+      token: patient.token,
+      patientNameMasked: maskedName,
+      department: patient.department,
+      room: patient.room,
+      passExpiry: patient.passExpiry,
       clearanceLevel: 'Tier-1 Ambulatory',
+      scanTimestamp,
+      isDuplicateScan: isDuplicate,
+      duplicateWarning,
     };
+  }
+
+  public getRecentScanLogs(limit = 15): GateScanLogEntry[] {
+    return this.scanLogs.slice(-limit).reverse();
   }
 }
 

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { registerPatient } from '../services/api';
-import { OPDDepartment, PatientQueueView, SmartQueueState } from '../types/queue';
+import { OPDDepartment, PatientQueueView, AnyQueueState } from '../types/queue';
 
 interface RegisterViewProps {
-  queueState: SmartQueueState | null;
+  queueState: AnyQueueState | null;
   onRegistered: (patientView: PatientQueueView) => void;
   onNavigate: (view: 'home' | 'register' | 'patient' | 'staff' | 'analytics') => void;
   onLookupToken: () => void;

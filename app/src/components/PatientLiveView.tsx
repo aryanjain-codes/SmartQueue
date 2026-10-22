@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { PatientQueueView, SmartQueueState } from '../types/queue';
+import { PatientQueueView, AnyQueueState } from '../types/queue';
 
 interface PatientLiveViewProps {
   patientView: PatientQueueView;
-  queueState: SmartQueueState | null;
+  queueState: AnyQueueState | null;
   onRefresh: () => void;
   onNavigate: (view: 'home' | 'register' | 'patient' | 'staff' | 'analytics') => void;
   onOpenPass: () => void;

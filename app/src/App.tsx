@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchQueueState, lookupTokenOrPatient } from './services/api';
-import { PatientQueueView, PatientRecord, SmartQueueState } from './types/queue';
+import { fetchQueueState, fetchClinicalQueueState, lookupTokenOrPatient } from './services/api';
+import { PatientQueueView, PatientRecord, PublicQueueStateDTO, SmartQueueState } from './types/queue';
 import { HomeView } from './components/HomeView';
 import { RegisterView } from './components/RegisterView';
 import { PatientLiveView } from './components/PatientLiveView';
@@ -14,7 +14,8 @@ import { GlobalViewSwitcher } from './components/GlobalViewSwitcher';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'home' | 'register' | 'patient' | 'staff' | 'analytics'>('home');
-  const [queueState, setQueueState] = useState<SmartQueueState | null>(null);
+  const [publicQueueState, setPublicQueueState] = useState<PublicQueueStateDTO | null>(null);
+  const [clinicalQueueState, setClinicalQueueState] = useState<SmartQueueState | null>(null);
   const [currentPatient, setCurrentPatient] = useState<PatientQueueView | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -22,25 +23,36 @@ export default function App() {
   // Modals
   const [passModalOpen, setPassModalOpen] = useState(false);
   const [scannerModalOpen, setScannerModalOpen] = useState(false);
+  const [scannerModalCode, setScannerModalCode] = useState<string>('');
   const [lookupModalOpen, setLookupModalOpen] = useState(false);
   const [chartModalPatient, setChartModalPatient] = useState<PatientRecord | null>(null);
 
-  // Sync Queue State from backend
+  // Synchronize queue state from backend (public or clinical based on view)
   const syncQueue = useCallback(async (patientToken?: string) => {
     setIsSyncing(true);
     try {
-      const state = await fetchQueueState();
-      setQueueState(state);
+      // 1. Always fetch public queue state
+      const pubState = await fetchQueueState();
+      setPublicQueueState(pubState);
 
-      // If we have an active patient, refresh their telemetry too
+      // 2. If in staff view, fetch protected clinical queue state using clinical staff credentials
+      if (currentView === 'staff') {
+        try {
+          const clinState = await fetchClinicalQueueState();
+          setClinicalQueueState(clinState);
+        } catch (cErr) {
+          console.warn('Clinical sync error:', cErr);
+        }
+      }
+
+      // 3. If we have an active patient, refresh their telemetry too
       const targetToken = patientToken || currentPatient?.token || 'MED-042';
       try {
         const pView = await lookupTokenOrPatient(targetToken);
         setCurrentPatient(pView);
       } catch (err) {
-        // If target token not found, default to first waiting or serving in General Medicine
-        if (state.patients.length > 0) {
-          const fallback = state.patients[0];
+        if (pubState.patients.length > 0) {
+          const fallback = pubState.patients[0];
           const fView = await lookupTokenOrPatient(fallback.token);
           setCurrentPatient(fView);
         }
@@ -51,7 +63,7 @@ export default function App() {
       setIsSyncing(false);
       setInitialLoading(false);
     }
-  }, [currentPatient?.token]);
+  }, [currentPatient?.token, currentView]);
 
   // Initial fetch and auto-polling every 4 seconds to maintain synchronized real-time state across clients
   useEffect(() => {
@@ -60,7 +72,16 @@ export default function App() {
       syncQueue();
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [syncQueue]);
+
+  // When switching views, if entering staff view, immediately fetch clinical state
+  useEffect(() => {
+    if (currentView === 'staff') {
+      fetchClinicalQueueState()
+        .then((s) => setClinicalQueueState(s))
+        .catch((err) => console.error('Failed to load clinical state for staff view:', err));
+    }
+  }, [currentView]);
 
   const handleRegistered = (newPatient: PatientQueueView) => {
     setCurrentPatient(newPatient);
@@ -73,7 +94,9 @@ export default function App() {
     setCurrentView('patient');
   };
 
-  if (initialLoading && !queueState) {
+  const activeQueueState = clinicalQueueState || publicQueueState;
+
+  if (initialLoading && !activeQueueState) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <div className="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center text-secondary-fixed mb-3 shadow-md animate-pulse">
@@ -91,7 +114,10 @@ export default function App() {
       <GlobalViewSwitcher
         currentView={currentView}
         onNavigate={setCurrentView}
-        onOpenScanner={() => setScannerModalOpen(true)}
+        onOpenScanner={() => {
+          setScannerModalCode(currentPatient?.passId || 'SQ-PASS-90412E5F6A7B8C9D0E1F-B');
+          setScannerModalOpen(true);
+        }}
         patientToken={currentPatient?.token}
         isSyncing={isSyncing}
       />
@@ -100,7 +126,7 @@ export default function App() {
       <div className="flex-1 flex flex-col">
         {currentView === 'home' && (
           <HomeView
-            queueState={queueState}
+            queueState={publicQueueState}
             onNavigate={setCurrentView}
             onLookupToken={() => setLookupModalOpen(true)}
           />
@@ -108,7 +134,7 @@ export default function App() {
 
         {currentView === 'register' && (
           <RegisterView
-            queueState={queueState}
+            queueState={publicQueueState}
             onRegistered={handleRegistered}
             onNavigate={setCurrentView}
             onLookupToken={() => setLookupModalOpen(true)}
@@ -118,7 +144,7 @@ export default function App() {
         {currentView === 'patient' && currentPatient && (
           <PatientLiveView
             patientView={currentPatient}
-            queueState={queueState}
+            queueState={publicQueueState}
             onRefresh={() => syncQueue(currentPatient.token)}
             onNavigate={setCurrentView}
             onOpenPass={() => setPassModalOpen(true)}
@@ -126,19 +152,22 @@ export default function App() {
           />
         )}
 
-        {currentView === 'staff' && queueState && (
+        {currentView === 'staff' && (
           <StaffDashboardView
-            queueState={queueState}
+            queueState={clinicalQueueState || (publicQueueState as unknown as SmartQueueState)}
             onRefresh={() => syncQueue()}
             onNavigate={setCurrentView}
-            onOpenScanner={() => setScannerModalOpen(true)}
+            onOpenScanner={() => {
+              setScannerModalCode(currentPatient?.passId || 'SQ-PASS-90412E5F6A7B8C9D0E1F-B');
+              setScannerModalOpen(true);
+            }}
             onViewPatientChart={(p) => setChartModalPatient(p)}
           />
         )}
 
-        {currentView === 'analytics' && queueState && (
+        {currentView === 'analytics' && activeQueueState && (
           <AnalyticsView
-            queueState={queueState}
+            queueState={activeQueueState}
             onNavigate={setCurrentView}
           />
         )}
@@ -150,8 +179,9 @@ export default function App() {
         <PatientPassModal
           patient={currentPatient}
           onClose={() => setPassModalOpen(false)}
-          onOpenScanner={() => {
+          onOpenScanner={(testCode) => {
             setPassModalOpen(false);
+            setScannerModalCode(testCode || currentPatient.passId);
             setScannerModalOpen(true);
           }}
         />
@@ -160,7 +190,7 @@ export default function App() {
       {/* Gate Scanner Terminal Modal */}
       {scannerModalOpen && (
         <GateScannerModal
-          initialCode={currentPatient?.passId || 'SQ-PASS-90412-B'}
+          initialCode={scannerModalCode || currentPatient?.passId || 'SQ-PASS-90412E5F6A7B8C9D0E1F-B'}
           onClose={() => setScannerModalOpen(false)}
         />
       )}

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import QRCode from 'qrcode';
 import { PatientRecord } from '../types/queue';
 
 interface PatientPassModalProps {
   patient: PatientRecord;
   onClose: () => void;
-  onOpenScanner?: () => void;
+  onOpenScanner?: (code?: string) => void;
 }
 
 export const PatientPassModal: React.FC<PatientPassModalProps> = ({
@@ -14,8 +15,47 @@ export const PatientPassModal: React.FC<PatientPassModalProps> = ({
 }) => {
   const [passState, setPassState] = useState<'active' | 'expired' | 'revoked'>('active');
   const [walletSaved, setWalletSaved] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
-  const expiryDate = new Date(patient.passExpiry || Date.now() + 30 * 24 * 60 * 60 * 1000);
+  // Determine active token code based on test selection
+  const currentPassToken =
+    passState === 'active'
+      ? patient.passId
+      : passState === 'expired'
+      ? 'SQ-PASS-EXPIRED-TEST-FIXTURE-B'
+      : 'SQ-PASS-REVOKED-TEST-FIXTURE-B';
+
+  // Generate dynamic QR code encoding ONLY the opaque pass token
+  useEffect(() => {
+    let active = true;
+    QRCode.toDataURL(
+      currentPassToken,
+      {
+        errorCorrectionLevel: 'M',
+        margin: 1,
+        width: 240,
+        color: {
+          dark: '#001428',
+          light: '#ffffff',
+        },
+      },
+      (err, url) => {
+        if (!err && url && active) {
+          setQrDataUrl(url);
+        }
+      }
+    );
+    return () => {
+      active = false;
+    };
+  }, [currentPassToken]);
+
+  const expiryDate = new Date(
+    passState === 'expired'
+      ? Date.now() - 5 * 24 * 60 * 60 * 1000
+      : patient.passExpiry || Date.now() + 30 * 24 * 60 * 60 * 1000
+  );
+
   const formattedExpiry = expiryDate.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -166,85 +206,43 @@ export const PatientPassModal: React.FC<PatientPassModalProps> = ({
                 </div>
                 <div className="text-right">
                   <span className="text-[9px] text-on-surface-variant block uppercase tracking-wide">PASS IDENTIFIER</span>
-                  <span className="font-mono text-xs font-bold text-primary">{patient.passId}</span>
+                  <span className="font-mono text-xs font-bold text-primary truncate max-w-[150px] inline-block" title={currentPassToken}>
+                    {currentPassToken}
+                  </span>
                 </div>
               </div>
 
-              {/* QR Code Container */}
+              {/* Dynamic QR Code Container */}
               <div className="relative bg-surface-container-low/60 border border-outline-variant/60 rounded-xl p-3 flex flex-col items-center justify-center">
-                <div className="w-40 h-40 bg-white p-2 rounded-lg border border-outline-variant shadow-inner flex items-center justify-center relative">
-                  {/* Clean SVG QR code representation */}
-                  <svg className="w-full h-full text-primary" fill="currentColor" viewBox="0 0 100 100">
-                    <rect x="5" y="5" width="24" height="24" rx="2" fill="none" stroke="currentColor" strokeWidth="4" />
-                    <rect x="11" y="11" width="12" height="12" fill="currentColor" />
-                    <rect x="71" y="5" width="24" height="24" rx="2" fill="none" stroke="currentColor" strokeWidth="4" />
-                    <rect x="77" y="11" width="12" height="12" fill="currentColor" />
-                    <rect x="5" y="71" width="24" height="24" rx="2" fill="none" stroke="currentColor" strokeWidth="4" />
-                    <rect x="11" y="77" width="12" height="12" fill="currentColor" />
-                    {/* Data modules */}
-                    <rect x="33" y="15" width="4" height="4" />
-                    <rect x="41" y="15" width="4" height="4" />
-                    <rect x="49" y="15" width="4" height="4" />
-                    <rect x="57" y="15" width="4" height="4" />
-                    <rect x="65" y="15" width="4" height="4" />
-                    <rect x="15" y="33" width="4" height="4" />
-                    <rect x="15" y="41" width="4" height="4" />
-                    <rect x="15" y="49" width="4" height="4" />
-                    <rect x="15" y="57" width="4" height="4" />
-                    <rect x="33" y="33" width="6" height="6" />
-                    <rect x="43" y="33" width="4" height="8" />
-                    <rect x="51" y="33" width="6" height="4" />
-                    <rect x="61" y="33" width="4" height="4" />
-                    <rect x="69" y="33" width="8" height="6" />
-                    <rect x="81" y="33" width="6" height="4" />
-                    <rect x="33" y="43" width="4" height="6" />
-                    <rect x="61" y="41" width="6" height="6" />
-                    <rect x="71" y="43" width="6" height="4" />
-                    <rect x="81" y="41" width="4" height="6" />
-                    <rect x="33" y="53" width="8" height="4" />
-                    <rect x="45" y="53" width="4" height="8" />
-                    <rect x="53" y="53" width="6" height="6" />
-                    <rect x="63" y="53" width="4" height="4" />
-                    <rect x="71" y="51" width="4" height="8" />
-                    <rect x="79" y="53" width="8" height="4" />
-                    <rect x="33" y="65" width="6" height="6" />
-                    <rect x="43" y="65" width="4" height="4" />
-                    <rect x="51" y="65" width="8" height="4" />
-                    <rect x="63" y="65" width="6" height="4" />
-                    <rect x="73" y="63" width="4" height="6" />
-                    <rect x="81" y="65" width="8" height="6" />
-                    <rect x="33" y="75" width="8" height="6" />
-                    <rect x="45" y="75" width="6" height="4" />
-                    <rect x="55" y="75" width="4" height="8" />
-                    <rect x="63" y="75" width="6" height="6" />
-                    <rect x="73" y="75" width="4" height="4" />
-                    <rect x="81" y="75" width="6" height="8" />
-                    <rect x="33" y="85" width="4" height="6" />
-                    <rect x="41" y="85" width="8" height="4" />
-                    <rect x="53" y="85" width="6" height="6" />
-                    <rect x="63" y="85" width="4" height="4" />
-                    <rect x="71" y="85" width="8" height="6" />
-                    {/* Medical Cross Center */}
-                    <circle cx="50" cy="50" r="8" fill="#ffffff" stroke="currentColor" strokeWidth="2" />
-                    <path d="M50 46v8M46 50h8" stroke="#006a61" strokeWidth="2.5" strokeLinecap="round" />
-                  </svg>
+                <div className="w-44 h-44 bg-white p-2 rounded-lg border border-outline-variant shadow-inner flex items-center justify-center relative">
+                  {qrDataUrl ? (
+                    <img
+                      src={qrDataUrl}
+                      alt={`Dynamic QR Pass: ${currentPassToken}`}
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="animate-pulse text-xs text-on-surface-variant font-mono">
+                      Generating Dynamic QR...
+                    </div>
+                  )}
 
                   {/* Overlays if Expired or Revoked */}
                   {passState !== 'active' && (
-                    <div className="absolute inset-0 bg-white/95 backdrop-blur-xs flex flex-col items-center justify-center p-2 text-center">
+                    <div className="absolute inset-0 bg-white/95 backdrop-blur-xs flex flex-col items-center justify-center p-2 text-center rounded-lg">
                       <span className={`material-symbols-outlined text-3xl mb-1 ${passState === 'expired' ? 'text-amber-700' : 'text-error'}`}>
                         {passState === 'expired' ? 'history' : 'block'}
                       </span>
                       <span className={`text-xs font-bold leading-tight ${passState === 'expired' ? 'text-amber-800' : 'text-error'}`}>
                         {passState === 'expired' ? 'PASS EXPIRED' : 'ACCESS REVOKED'}
                       </span>
-                      <span className="text-[10px] text-on-surface-variant mt-0.5">Report to OPD Triage</span>
+                      <span className="text-[10px] text-on-surface-variant mt-0.5">Report to Central OPD Desk</span>
                     </div>
                   )}
                 </div>
                 <div className="mt-2 flex items-center gap-1.5 text-on-surface-variant text-[11px]">
                   <span className="material-symbols-outlined text-[14px] text-secondary">qr_code_scanner</span>
-                  <span>Hold 10-15 cm from optical reader at entry</span>
+                  <span>Dynamic QR: Encodes opaque token only</span>
                 </div>
               </div>
 
@@ -282,7 +280,7 @@ export const PatientPassModal: React.FC<PatientPassModalProps> = ({
                   <div>
                     <p className="text-[11px] font-bold text-primary">Zero-Knowledge Health Pass</p>
                     <p className="text-[10px] text-on-surface-variant leading-relaxed mt-0.5">
-                      For patient privacy & HIPAA compliance, clinical records and diagnoses are <strong className="text-primary font-semibold">NEVER</strong> embedded in this QR barcode.
+                      For patient privacy & HIPAA compliance, clinical records, complaints, and allergies are <strong className="text-primary font-semibold">NEVER</strong> embedded in this QR barcode.
                     </p>
                   </div>
                 </div>
@@ -312,7 +310,7 @@ export const PatientPassModal: React.FC<PatientPassModalProps> = ({
               <span className="material-symbols-outlined text-[18px]">
                 {walletSaved ? 'check_circle' : 'account_balance_wallet'}
               </span>
-              <span>{walletSaved ? `Pass ${patient.passId} Saved to Wallet ✓` : 'Save to Apple Wallet / Google Wallet'}</span>
+              <span>{walletSaved ? `Pass Saved to Wallet ✓` : 'Save to Apple Wallet / Google Wallet'}</span>
             </button>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -324,7 +322,7 @@ export const PatientPassModal: React.FC<PatientPassModalProps> = ({
               </button>
               {onOpenScanner && (
                 <button
-                  onClick={onOpenScanner}
+                  onClick={() => onOpenScanner(currentPassToken)}
                   className="h-9 bg-secondary text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-on-secondary-container active:scale-95 transition-all"
                 >
                   <span className="material-symbols-outlined text-[16px]">qr_code_scanner</span>

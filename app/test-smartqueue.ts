@@ -2,21 +2,39 @@ import { queueDb } from './server/queueStore';
 import fs from 'fs';
 import path from 'path';
 
-async function runAuditTests() {
-  console.log('=== STARTING SMARTQUEUE OPD AUDIT TESTS ===\n');
+async function runSecurityAndQueueTests() {
+  console.log('===========================================================');
+  console.log('   SMARTQUEUE OPD SECURITY & FUNCTIONALITY TEST SUITE      ');
+  console.log('===========================================================\n');
 
-  // Test 1: Persistent database file exists
-  const dataFilePath = path.resolve('./data/smartqueue.json');
-  console.log('[Test 1] Checking database persistence file...');
-  if (!fs.existsSync(dataFilePath)) {
-    throw new Error(`Data file not found at ${dataFilePath}`);
+  let passedCount = 0;
+  let failedCount = 0;
+
+  function assert(condition: boolean, testName: string, details?: string) {
+    if (condition) {
+      console.log(`  ✓ PASS: ${testName}`);
+      passedCount++;
+    } else {
+      console.error(`  ✗ FAIL: ${testName} ${details ? '- ' + details : ''}`);
+      failedCount++;
+    }
   }
+
+  // -------------------------------------------------------------
+  // TEST GROUP 1: DATABASE PERSISTENCE & DISK RECOVERY
+  // -------------------------------------------------------------
+  console.log('--- TEST GROUP 1: Database Persistence & Storage ---');
+  const dataFilePath = path.resolve('./data/smartqueue.json');
+  assert(fs.existsSync(dataFilePath), 'Database JSON file exists on disk');
+
   const fileContentBefore = fs.readFileSync(dataFilePath, 'utf-8');
   const parsedBefore = JSON.parse(fileContentBefore);
-  console.log(`✓ Data file exists and contains ${parsedBefore.length} patient records on disk.\n`);
+  assert(Array.isArray(parsedBefore) && parsedBefore.length > 0, `Database file populated (${parsedBefore.length} initial records)`);
 
-  // Test 2: Patient Registration
-  console.log('[Test 2] Testing Patient Registration with synthetic data...');
+  // -------------------------------------------------------------
+  // TEST GROUP 2: PATIENT REGISTRATION WITH SYNTHETIC DATA
+  // -------------------------------------------------------------
+  console.log('\n--- TEST GROUP 2: Synthetic Patient Registration & Token Generation ---');
   const syntheticPatient = {
     fullName: 'Lucas Meyer',
     age: 44,
@@ -28,97 +46,208 @@ async function runAuditTests() {
   };
 
   const regResult = queueDb.registerPatient(syntheticPatient);
-  console.log(`✓ Patient registered successfully:`);
-  console.log(`  - Patient ID: ${regResult.id}`);
-  console.log(`  - Queue Token: ${regResult.token}`);
-  console.log(`  - Pass ID: ${regResult.passId}`);
-  console.log(`  - Department: ${regResult.department}`);
-  console.log(`  - Position in line: ${regResult.position}`);
-  console.log(`  - Est. wait: ${regResult.estimatedWaitMinutes} mins`);
+  assert(!!regResult.id && regResult.id.startsWith('SJH-'), 'Generated unique Patient ID (e.g. ' + regResult.id + ')');
+  assert(!!regResult.token && regResult.token.startsWith('MED-'), 'Generated visit-specific token (e.g. ' + regResult.token + ')');
+  assert(
+    !!regResult.passId && regResult.passId.startsWith('SQ-PASS-') && regResult.passId.length >= 30,
+    'Generated 128-bit cryptographically secure pass ID (' + regResult.passId + ')'
+  );
+  assert(regResult.position >= 1, `Queue position calculated correctly (Position: ${regResult.position})`);
+  assert(regResult.estimatedWaitMinutes >= 2, `Estimated wait time calculated (Est: ${regResult.estimatedWaitMinutes} mins)`);
 
-  // Test 3: Disk persistence across reload (simulating page refresh / restart)
-  console.log('\n[Test 3] Verifying record persists on disk (survives page refresh)...');
+  // Verify record written to disk
   const fileContentAfter = fs.readFileSync(dataFilePath, 'utf-8');
   const parsedAfter = JSON.parse(fileContentAfter);
   const foundOnDisk = parsedAfter.find((p: any) => p.token === regResult.token);
-  if (!foundOnDisk) {
-    throw new Error(`CRITICAL: Registered patient ${regResult.token} NOT found on disk!`);
+  assert(!!foundOnDisk, 'Registered patient verified on disk (survives process restart)');
+
+  // -------------------------------------------------------------
+  // TEST GROUP 3: PRIORITY 1 - DATA PRIVACY & SANITIZED PUBLIC DTO
+  // -------------------------------------------------------------
+  console.log('\n--- TEST GROUP 3: Data Privacy & Response DTOs ---');
+  const publicState = queueDb.getPublicState();
+
+  // Verify public queue state contains only sanitized PublicQueuePatientDTO
+  assert(Array.isArray(publicState.patients), 'Public queue returns patient list');
+  const samplePublicPatient: any = publicState.patients[0];
+  assert(
+    samplePublicPatient &&
+      samplePublicPatient.fullName === undefined &&
+      samplePublicPatient.contactNumber === undefined &&
+      samplePublicPatient.chiefComplaint === undefined &&
+      samplePublicPatient.allergies === undefined &&
+      samplePublicPatient.notes === undefined &&
+      samplePublicPatient.mrn === undefined,
+    'Public queue patient DTO excludes fullName, contactNumber, chiefComplaint, allergies, notes, and MRN'
+  );
+
+  // Check nowServingPatient in departments
+  const genDept = publicState.departments['General Medicine'];
+  const nowServingPublic: any = genDept.nowServingPatient;
+  if (nowServingPublic) {
+    assert(
+      nowServingPublic.contactNumber === undefined &&
+        nowServingPublic.chiefComplaint === undefined &&
+        nowServingPublic.allergies === undefined &&
+        nowServingPublic.notes === undefined,
+      'Department nowServingPatient excludes contactNumber, chiefComplaint, allergies, and notes'
+    );
+    assert(
+      nowServingPublic.fullName.includes('.') || !nowServingPublic.fullName.includes(' '),
+      `Patient name in public state is masked: "${nowServingPublic.fullName}"`
+    );
   }
-  console.log(`✓ Record confirmed on disk for Token ${foundOnDisk.token} (ID: ${foundOnDisk.id}).`);
 
-  // Test 4: Token lookup by token, patient ID, and pass ID
-  console.log('\n[Test 4] Testing Token Lookup...');
-  const lookupByToken = queueDb.getPatientView(regResult.token);
-  if (!lookupByToken || lookupByToken.fullName !== syntheticPatient.fullName) {
-    throw new Error(`Lookup by token failed for ${regResult.token}`);
+  // Patient Self-Lookup
+  const selfLookup = queueDb.getPatientSelfView(regResult.token);
+  assert(
+    !!selfLookup && selfLookup.fullName === syntheticPatient.fullName,
+    'Patient self-lookup retrieves their own ticket details and position'
+  );
+
+  // Protected clinical state requires clinical role
+  let unauthClinicalErrorCaught = false;
+  try {
+    queueDb.getClinicalState('security');
+  } catch (err: any) {
+    unauthClinicalErrorCaught = true;
   }
-  const lookupById = queueDb.getPatientView(regResult.id);
-  if (!lookupById || lookupById.token !== regResult.token) {
-    throw new Error(`Lookup by Patient ID failed for ${regResult.id}`);
+  assert(unauthClinicalErrorCaught, 'Clinical queue state rejects non-clinical role (access control enforced)');
+
+  const clinicalState = queueDb.getClinicalState('clinical');
+  assert(
+    Array.isArray(clinicalState.patients) && clinicalState.patients[0].chiefComplaint !== undefined,
+    'Authorized clinical state contains EHR clinical records for attending physicians'
+  );
+
+  // -------------------------------------------------------------
+  // TEST GROUP 4: PRIORITY 2 - SECURE PASS VERIFICATION & VALIDATION
+  // -------------------------------------------------------------
+  console.log('\n--- TEST GROUP 4: Secure Pass Tokens & Verification Logic ---');
+
+  // 4a. Valid Pass
+  const validClearance = queueDb.verifyGatePass(regResult.passId, 'security', 'SEC-402', 'Gate 02');
+  assert(validClearance.outcome === 'VALID', 'Valid pass verified successfully (Outcome: VALID)');
+  assert(
+    validClearance.patientNameMasked === 'Lucas M.',
+    `Valid clearance returns masked patient name ("${validClearance.patientNameMasked}")`
+  );
+  assert(
+    validClearance.department === 'General Medicine' && validClearance.room === 'Room 104',
+    `Operational clinic routing included (${validClearance.department}, ${validClearance.room})`
+  );
+
+  // Strictly verify NO sensitive fields exist in GateClearanceDTO
+  const rawClearance: any = validClearance;
+  assert(
+    rawClearance.contactNumber === undefined &&
+      rawClearance.mrn === undefined &&
+      rawClearance.chiefComplaint === undefined &&
+      rawClearance.allergies === undefined &&
+      rawClearance.notes === undefined,
+    'Gate clearance strictly EXCLUDES contactNumber, MRN, chiefComplaint, allergies, and clinical notes'
+  );
+
+  // 4b. Expired Pass (Server evaluates true 30-day expiration)
+  const expiredClearance = queueDb.verifyGatePass('SQ-PASS-EXPIRED-TEST-FIXTURE-B', 'security');
+  assert(
+    expiredClearance.outcome === 'EXPIRED',
+    `Expired pass rejected with EXPIRED outcome (${expiredClearance.message})`
+  );
+
+  // 4c. Revoked Pass (Server evaluates revocation)
+  const revokedClearance = queueDb.verifyGatePass('SQ-PASS-REVOKED-TEST-FIXTURE-B', 'security');
+  assert(
+    revokedClearance.outcome === 'REVOKED',
+    `Revoked pass rejected with REVOKED outcome (${revokedClearance.message})`
+  );
+
+  // 4d. Unknown / Invalid Pass
+  const invalidClearance = queueDb.verifyGatePass('SQ-RANDOM-NONEXISTENT-PASS', 'security');
+  assert(
+    invalidClearance.outcome === 'INVALID',
+    `Unknown token rejected with INVALID outcome (${invalidClearance.message})`
+  );
+
+  // -------------------------------------------------------------
+  // TEST GROUP 5: PRIORITY 3 - ACCESS CONTROL, DUPLICATES & AUDIT LOGS
+  // -------------------------------------------------------------
+  console.log('\n--- TEST GROUP 5: Gate Access Protection & Duplicate Scan Handling ---');
+
+  // 5a. Role Enforcement for Gate Scanner
+  let unauthGateError = false;
+  try {
+    queueDb.verifyGatePass(regResult.passId, 'public');
+  } catch (err) {
+    unauthGateError = true;
   }
-  const lookupByPass = queueDb.getPatientView(regResult.passId);
-  if (!lookupByPass || lookupByPass.token !== regResult.token) {
-    throw new Error(`Lookup by Pass ID failed for ${regResult.passId}`);
+  assert(unauthGateError, 'Gate scanner verification rejects unauthenticated/public role');
+
+  // 5b. Safe Duplicate Scan Detection (5-minute cooldown rule)
+  const duplicateClearance = queueDb.verifyGatePass(regResult.passId, 'security', 'SEC-402', 'Gate 02');
+  assert(
+    duplicateClearance.outcome === 'VALID' && duplicateClearance.isDuplicateScan === true,
+    'Second scan of same pass within 5 minutes flagged as duplicate (isDuplicateScan: true)'
+  );
+  assert(
+    !!duplicateClearance.duplicateWarning && duplicateClearance.duplicateWarning.includes('Duplicate scan detected'),
+    `Duplicate warning message generated ("${duplicateClearance.duplicateWarning?.substring(0, 50)}...")`
+  );
+
+  // 5c. Server-side Scan Event Logging
+  const recentLogs = queueDb.getRecentScanLogs(10);
+  assert(recentLogs.length >= 2, `Scan events logged persistently in memory and disk (${recentLogs.length} logs found)`);
+  const lastLog = recentLogs[0];
+  assert(
+    lastLog.operatorId === 'SEC-402' && lastLog.gateId === 'Gate 02',
+    `Audit log records operator ID (${lastLog.operatorId}) and gate terminal (${lastLog.gateId})`
+  );
+
+  const scansFilePath = path.resolve('./data/gate_scans.json');
+  assert(fs.existsSync(scansFilePath), 'Gate scans audit file exists on disk (data/gate_scans.json)');
+
+  // -------------------------------------------------------------
+  // TEST GROUP 6: CLINICAL QUEUE OPERATIONS (CALL NEXT & COMPLETE)
+  // -------------------------------------------------------------
+  console.log('\n--- TEST GROUP 6: Clinical Workflow Operations ---');
+
+  // 6a. Call Next (requires clinical role)
+  let callNextUnauthError = false;
+  try {
+    queueDb.callNext('General Medicine', 'security');
+  } catch (err) {
+    callNextUnauthError = true;
   }
-  console.log(`✓ Token lookup passed for Token (${regResult.token}), Patient ID (${regResult.id}), and Pass ID (${regResult.passId}).`);
+  assert(callNextUnauthError, 'Call Next rejects non-clinical role');
 
-  // Test 5: Queue Position & State consistency
-  console.log('\n[Test 5] Checking Queue Position & Shared Consistency between patient & staff...');
-  const state1 = queueDb.getState();
-  const deptGen = state1.departments['General Medicine'];
-  console.log(`  - Current serving in General Medicine: ${deptGen.nowServingToken}`);
-  console.log(`  - Waiting count: ${deptGen.waitingCount}`);
-  console.log(`  - Patient position reported: ${lookupByToken.position}`);
+  const callNextRes = queueDb.callNext('General Medicine', 'clinical');
+  assert(
+    callNextRes.current !== null && callNextRes.current.status === 'SERVING',
+    `Next patient called and status updated to SERVING (Token: ${callNextRes.current?.token})`
+  );
 
-  // Test 6: Staff "Call Next" action
-  console.log('\n[Test 6] Testing Staff "Call Next" action...');
-  const callNextRes = queueDb.callNext('General Medicine');
-  console.log(`  - Previous Serving: ${callNextRes.previous ? callNextRes.previous.token + ' (' + callNextRes.previous.fullName + ')' : 'None'}`);
-  console.log(`  - Current Now Serving: ${callNextRes.current ? callNextRes.current.token + ' (' + callNextRes.current.fullName + ')' : 'None'}`);
+  // 6b. Complete Consultation (requires clinical role)
+  const completeRes = queueDb.completeConsultation('General Medicine', 'clinical');
+  assert(
+    completeRes !== null && completeRes.status === 'COMPLETED',
+    `Consultation completed and status updated to COMPLETED (Token: ${completeRes?.token})`
+  );
 
-  if (callNextRes.previous) {
-    if (callNextRes.previous.status !== 'COMPLETED') {
-      throw new Error(`Expected previous patient to be COMPLETED, got ${callNextRes.previous.status}`);
-    }
+  // -------------------------------------------------------------
+  // SUMMARY
+  // -------------------------------------------------------------
+  console.log('\n===========================================================');
+  console.log(`TOTAL TESTS EXECUTED: ${passedCount + failedCount}`);
+  console.log(`PASSED: ${passedCount}`);
+  console.log(`FAILED: ${failedCount}`);
+  console.log('===========================================================');
+
+  if (failedCount > 0) {
+    throw new Error(`${failedCount} test(s) failed.`);
   }
-  if (callNextRes.current) {
-    if (callNextRes.current.status !== 'SERVING') {
-      throw new Error(`Expected current patient to be SERVING, got ${callNextRes.current.status}`);
-    }
-  }
-  console.log('✓ Call Next transitioned patient statuses correctly and updated disk storage.');
-
-  // Test 7: Staff "Complete Consultation" action
-  console.log('\n[Test 7] Testing Staff "Complete Consultation" action...');
-  const completedPatient = queueDb.completeConsultation('General Medicine');
-  if (!completedPatient) {
-    console.log('  - Note: No active patient was serving to complete, or already completed.');
-  } else {
-    console.log(`  - Completed patient: ${completedPatient.token} (${completedPatient.fullName})`);
-    if (completedPatient.status !== 'COMPLETED') {
-      throw new Error(`Expected status COMPLETED, got ${completedPatient.status}`);
-    }
-  }
-  console.log('✓ Complete Consultation functioned accurately.');
-
-  // Test 8: QR Pass / Scanner verification
-  console.log('\n[Test 8] Testing Gate Scanner backend verification...');
-  const validScan = queueDb.verifyPassOrToken(regResult.passId);
-  console.log(`  - Valid Pass Result: ${validScan.outcome} (${validScan.message})`);
-  if (validScan.outcome !== 'VALID') throw new Error(`Expected VALID, got ${validScan.outcome}`);
-
-  const expiredScan = queueDb.verifyPassOrToken('EXP-PASS-1029');
-  console.log(`  - Expired Code Result: ${expiredScan.outcome} (${expiredScan.message})`);
-  if (expiredScan.outcome !== 'EXPIRED') throw new Error(`Expected EXPIRED, got ${expiredScan.outcome}`);
-
-  const invalidScan = queueDb.verifyPassOrToken('RANDOM-TRAIN-TICKET');
-  console.log(`  - Invalid Code Result: ${invalidScan.outcome} (${invalidScan.message})`);
-  if (invalidScan.outcome !== 'INVALID') throw new Error(`Expected INVALID, got ${invalidScan.outcome}`);
-
-  console.log('\n=== ALL AUDIT TESTS PASSED SUCCESSFULLY! ===');
 }
 
-runAuditTests().catch((err) => {
-  console.error('\n❌ AUDIT TEST FAILURE:', err);
+runSecurityAndQueueTests().catch((err) => {
+  console.error('\n❌ TEST RUN FAILED:', err);
   process.exit(1);
 });

@@ -1,8 +1,8 @@
 import React from 'react';
-import { SmartQueueState } from '../types/queue';
+import { AnyQueueState } from '../types/queue';
 
 interface HomeViewProps {
-  queueState: SmartQueueState | null;
+  queueState: AnyQueueState | null;
   onNavigate: (view: 'home' | 'register' | 'patient' | 'staff' | 'analytics') => void;
   onLookupToken: () => void;
 }

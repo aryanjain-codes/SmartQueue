@@ -76,3 +76,85 @@ export interface RegistrationPayload {
   chiefComplaint: string;
   allergies: string[];
 }
+
+// ==========================================
+// DTOs for Security & Data Privacy
+// ==========================================
+
+export type StaffRole = 'clinical' | 'security' | 'public';
+
+export interface StaffUser {
+  id: string;
+  name: string;
+  role: StaffRole;
+  designation: string;
+}
+
+/**
+ * Public queue record - excludes contactNumber, MRN, chiefComplaint, allergies, clinical notes
+ */
+export interface PublicQueuePatientDTO {
+  id: string; // obfuscated / public reference (e.g. "PT-**348")
+  token: string; // e.g. "MED-042"
+  department: OPDDepartment;
+  room: string;
+  status: QueueStatus;
+  triageSeverity: TriageSeverity;
+  location: string;
+  registeredAt: string;
+  position?: number;
+}
+
+/**
+ * Public queue state returned to unauthenticated clients
+ */
+export interface PublicQueueStateDTO {
+  patients: PublicQueuePatientDTO[];
+  departments: Record<OPDDepartment, DepartmentSummary>;
+  lastUpdated: string;
+  systemMetrics: {
+    totalCheckedIn: number;
+    totalServed: number;
+    inWaiting: number;
+    atLab: number;
+    velocitySlaPercent: number;
+    averageWaitMinutes: number;
+  };
+}
+
+export type AnyQueueState = SmartQueueState | PublicQueueStateDTO;
+
+/**
+ * Gate clearance response returned to Security Kiosk - contains only operational minimums
+ * Strictly excludes: contactNumber, MRN, chiefComplaint, allergies, clinical notes
+ */
+export interface GateClearanceDTO {
+  outcome: 'VALID' | 'EXPIRED' | 'REVOKED' | 'INVALID';
+  message: string;
+  passId?: string;
+  token?: string;
+  patientNameMasked?: string; // e.g. "Eleanor V."
+  department?: string;
+  room?: string;
+  passExpiry?: string;
+  clearanceLevel?: string;
+  scanTimestamp: string;
+  isDuplicateScan?: boolean;
+  duplicateWarning?: string;
+}
+
+/**
+ * Persistent gate entry scan log entry
+ */
+export interface GateScanLogEntry {
+  id: string;
+  passIdOrCode: string;
+  outcome: 'VALID' | 'EXPIRED' | 'REVOKED' | 'INVALID';
+  timestamp: string;
+  operatorId: string;
+  gateId: string;
+  patientNameMasked?: string;
+  token?: string;
+  isDuplicate: boolean;
+}
+

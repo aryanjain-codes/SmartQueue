@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { SmartQueueState } from '../types/queue';
+import { AnyQueueState } from '../types/queue';
 
 interface AnalyticsViewProps {
-  queueState: SmartQueueState;
+  queueState: AnyQueueState;
   onNavigate: (view: 'home' | 'register' | 'patient' | 'staff' | 'analytics') => void;
 }
 
