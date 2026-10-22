@@ -1,20 +1,64 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# SmartQueue
 
-# Run and deploy your AI Studio app
+**SmartQueue — Smart Hospital Queue Management System**
 
-This contains everything you need to run your app locally.
+SmartQueue is a hospital queue management solution designed to streamline patient registration, reduce waiting times, and help hospital staff manage queues efficiently.
 
-View your app in AI Studio: https://ai.studio/apps/0586e526-a09d-409e-b513-cb0211054e64
+## Features
 
-## Run Locally
+- Patient registration and queue management
+- Digital patient passes with QR codes
+- QR-based gate verification
+- Live queue status and updates
+- Queue analytics and dashboard
+- Token expiry and revocation checks
+- Gate scan logging and duplicate-scan protection
 
-**Prerequisites:**  Node.js
+## Tech Stack
 
+- **Frontend:** React, TypeScript, Vite
+- **Backend:** Node.js, Express
+- **Data Processing:** JavaScript / TypeScript
+- **Storage:** Local JSON data
+- **QR Codes:** Dynamic QR generation
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Getting Started
+
+### Prerequisites
+
+- Node.js
+- npm
+
+### Installation
+
+```bash
+git clone https://github.com/aryanjain-codes/SmartQueue.git
+cd SmartQueue/app
+npm install
+```
+
+### Run Locally
+
+```bash
+npm run dev
+```
+
+Open the local URL shown in your terminal.
+
+## Security Notes
+
+This project is a prototype. Before deploying it publicly, configure proper authentication and role-based authorization, protect patient information, secure secrets using environment variables, and validate all server-side requests.
+
+Do not use real patient data or hardcoded access tokens in a public deployment.
+
+## Team
+
+Built for hackathon prototyping by Team JANSEE.
+
+## Project Status
+
+Prototype under development.
+
+---
+
+*SmartQueue — Making hospital queues smarter and more efficient.*
