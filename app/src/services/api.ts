@@ -9,7 +9,7 @@ import {
   GateScanLogEntry,
 } from '../types/queue';
 
-const BASE_URL = '/api';
+const BASE_URL = 'https://smartqueue-rrys.onrender.com/api';
 
 export const DEFAULT_SECURITY_TOKEN = 'sec-gate-token-402';
 export const DEFAULT_CLINICAL_TOKEN = 'cln-med-token-104';
