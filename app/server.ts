@@ -72,6 +72,32 @@ async function startServer() {
   const app = express();
   app.use(express.json());
 
+  
+  // Allow the deployed Netlify frontend to call this API
+  app.use((req: Request, res: Response, next) => {
+    const allowedOrigin = 'https://smartqueue-fsp.netlify.app';
+
+    if (req.headers.origin === allowedOrigin) {
+      res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+      res.setHeader('Vary', 'Origin');
+      res.setHeader(
+        'Access-Control-Allow-Methods',
+        'GET, POST, PUT, PATCH, DELETE, OPTIONS'
+      );
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Content-Type, Authorization, X-Staff-Token'
+      );
+    }
+
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+
+    next();
+  });
+
+
   // Log API requests
   app.use('/api', (req, _res, next) => {
     console.log(`[API] ${req.method} ${req.path}`);
