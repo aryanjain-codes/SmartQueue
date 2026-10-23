@@ -8,6 +8,7 @@ import {
   verifyPass,
   fetchScanLogs,
   DEFAULT_SECURITY_TOKEN,
+  StaffSession,
 } from '../services/api';
 import {
   OPDDepartment,
@@ -21,6 +22,8 @@ import {
 interface StaffDashboardViewProps {
   queueState: SmartQueueState;
   staffRole?: 'clinical' | 'security';
+  staffSession?: StaffSession | null;
+  onLogout?: () => void;
   onToggleStaffRole?: (role: 'clinical' | 'security') => void;
   onRefresh: () => void;
   onNavigate: (view: 'home' | 'register' | 'patient' | 'staff' | 'analytics') => void;
@@ -32,6 +35,8 @@ interface StaffDashboardViewProps {
 export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
   queueState,
   staffRole = 'clinical',
+  staffSession,
+  onLogout,
   onToggleStaffRole,
   onRefresh,
   onNavigate,
@@ -62,12 +67,18 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
 
   // Load audit logs on mount
   useEffect(() => {
-    fetchScanLogs()
+    fetchScanLogs(staffSession?.token || DEFAULT_SECURITY_TOKEN)
       .then((logs) => setSecScanLogs(logs))
       .catch((err) => console.warn('Could not fetch initial scan logs:', err));
-  }, []);
+  }, [staffSession?.token]);
 
   const handleRoleToggle = (newRole: 'clinical' | 'security') => {
+    if (staffSession && staffSession.user.role !== newRole) {
+      setActionFeedback(
+        `Authenticated as ${staffSession.user.name} (${staffSession.user.role.toUpperCase()}). Please sign out and log in with ${newRole} credentials to access that station.`
+      );
+      return;
+    }
     setActiveRole(newRole);
     if (onToggleStaffRole) onToggleStaffRole(newRole);
   };
@@ -76,9 +87,9 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
     if (!codeToVerify.trim()) return;
     setSecScanning(true);
     try {
-      const res = await verifyPass(codeToVerify.trim(), DEFAULT_SECURITY_TOKEN, 'Gate 02');
+      const res = await verifyPass(codeToVerify.trim(), staffSession?.token || DEFAULT_SECURITY_TOKEN, 'Gate 02');
       setSecClearance(res);
-      const logs = await fetchScanLogs(DEFAULT_SECURITY_TOKEN);
+      const logs = await fetchScanLogs(staffSession?.token || DEFAULT_SECURITY_TOKEN);
       setSecScanLogs(logs);
     } catch (err: any) {
       setSecClearance({
@@ -405,9 +416,9 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
               </div>
             </div>
             <button
-              onClick={() => onNavigate('home')}
+              onClick={onLogout || (() => onNavigate('home'))}
               className="text-on-surface-variant hover:text-error transition-colors p-1 rounded shrink-0"
-              title="Return to Landing"
+              title={onLogout ? 'Logout Staff Session' : 'Return to Landing'}
             >
               <span className="material-symbols-outlined text-[18px]">logout</span>
             </button>
@@ -493,6 +504,26 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
                   className="w-full pl-7 pr-3 py-1 text-xs bg-white border border-outline-variant rounded-lg focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary"
                 />
               </div>
+            )}
+
+            {staffSession && (
+              <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container border border-outline-variant/70 text-[11px] font-mono">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span className="font-semibold text-primary">{staffSession.user.name}</span>
+                <span className="text-on-surface-variant">({staffSession.user.operatorId})</span>
+              </div>
+            )}
+
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-surface-container hover:bg-surface-container-high text-primary border border-outline-variant flex items-center gap-1 transition-colors"
+                title="Logout Staff Session"
+              >
+                <span className="material-symbols-outlined text-[15px] text-error">logout</span>
+                <span className="hidden sm:inline">Logout</span>
+              </button>
             )}
 
             <button

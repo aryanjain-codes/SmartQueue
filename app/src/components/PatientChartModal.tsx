@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PatientRecord } from '../types/queue';
+import { updatePatientNotes, staffCompleteConsultation } from '../services/api';
 
 interface PatientChartModalProps {
   patient: PatientRecord;
@@ -15,11 +16,48 @@ export const PatientChartModal: React.FC<PatientChartModalProps> = ({
   onOpenPass,
 }) => {
   const [notes, setNotes] = useState(
-    'Patient presents alert, oriented x 3. Vital signs stable. Neurological exam grossly intact. Recommending dark room rest, IV fluids, and Sumatriptan response monitoring.'
+    patient.notes ||
+      'Patient presents alert, oriented x 3. Vital signs stable. Neurological exam grossly intact. Recommending dark room rest, IV fluids, and Sumatriptan response monitoring.'
   );
   const [notesRecorded, setNotesRecorded] = useState(false);
+  const [notesSaving, setNotesSaving] = useState(false);
+  const [notesError, setNotesError] = useState<string | null>(null);
+  const [completingVisit, setCompletingVisit] = useState(false);
   const [prescriptionAdded, setPrescriptionAdded] = useState(false);
   const [labOrdered, setLabOrdered] = useState(false);
+
+  const handleSaveNotes = async () => {
+    setNotesSaving(true);
+    setNotesError(null);
+    try {
+      await updatePatientNotes(patient.token, notes);
+      setNotesRecorded(true);
+      setTimeout(() => setNotesRecorded(false), 3000);
+    } catch (err: any) {
+      setNotesError(err.message || 'Failed to save notes to database');
+    } finally {
+      setNotesSaving(false);
+    }
+  };
+
+  const handleCompleteVisit = async () => {
+    setCompletingVisit(true);
+    try {
+      await staffCompleteConsultation(patient.department);
+      if (onCompleteConsultation) {
+        onCompleteConsultation();
+      }
+      onClose();
+    } catch (err: any) {
+      console.error('Failed to complete consultation:', err);
+      if (onCompleteConsultation) {
+        onCompleteConsultation();
+      }
+      onClose();
+    } finally {
+      setCompletingVisit(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 lg:p-6 bg-primary/70 backdrop-blur-xs overflow-y-auto">
@@ -206,8 +244,13 @@ export const PatientChartModal: React.FC<PatientChartModalProps> = ({
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-primary flex items-center justify-between">
                     <span>Attending Consultation Notes</span>
-                    {notesRecorded && <span className="text-emerald-700 text-[11px] font-normal">Notes Saved ✓</span>}
+                    {notesRecorded && <span className="text-emerald-700 text-[11px] font-normal">Saved to Database ✓</span>}
                   </label>
+                  {notesError && (
+                    <div className="text-[11px] text-red-600 bg-red-50 p-1.5 rounded border border-red-200">
+                      {notesError}
+                    </div>
+                  )}
                   <textarea
                     rows={3}
                     value={notes}
@@ -216,10 +259,13 @@ export const PatientChartModal: React.FC<PatientChartModalProps> = ({
                   />
                   <div className="flex justify-end">
                     <button
-                      onClick={() => setNotesRecorded(true)}
-                      className="px-2.5 py-1 text-xs bg-surface-container hover:bg-surface-container-high rounded text-primary font-semibold transition-colors"
+                      type="button"
+                      disabled={notesSaving}
+                      onClick={handleSaveNotes}
+                      className="px-2.5 py-1 text-xs bg-surface-container hover:bg-surface-container-high rounded text-primary font-semibold transition-colors disabled:opacity-50 flex items-center gap-1"
                     >
-                      Save Notes
+                      <span className="material-symbols-outlined text-[13px]">save</span>
+                      <span>{notesSaving ? 'Saving to DB...' : 'Save Notes'}</span>
                     </button>
                   </div>
                 </div>
@@ -260,14 +306,13 @@ export const PatientChartModal: React.FC<PatientChartModalProps> = ({
             </button>
             {onCompleteConsultation && (
               <button
-                onClick={() => {
-                  onCompleteConsultation();
-                  onClose();
-                }}
-                className="px-4 py-1.5 bg-secondary hover:bg-on-secondary-container text-white rounded text-xs font-bold transition-all shadow-xs"
+                type="button"
+                disabled={completingVisit}
+                onClick={handleCompleteVisit}
+                className="px-4 py-1.5 bg-secondary hover:bg-on-secondary-container text-white rounded text-xs font-bold transition-all shadow-xs disabled:opacity-50 flex items-center gap-1"
               >
-                <span className="material-symbols-outlined text-[14px] align-middle mr-1">check_circle</span>
-                Complete Visit & Discharge
+                <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                <span>{completingVisit ? 'Completing...' : 'Complete Visit & Discharge'}</span>
               </button>
             )}
           </div>

@@ -26,6 +26,7 @@ import {
   insertPatientRecord,
   updateQueueEntry,
   updatePassStatusDb,
+  updatePatientNotes as updatePatientNotesInDb,
   insertScanLog,
   getRecentScanLogsFromDb,
   migrateFromJsonIfEmpty,
@@ -1027,6 +1028,28 @@ class QueueDatabase {
     this.syncFromDb();
 
     return { success: true, patient: this.getPatientSelfView(patient.token) };
+  }
+
+  /**
+   * Update clinical consultation notes for a patient.
+   * Requires Clinical staff authorization.
+   */
+  public updatePatientNotes(
+    tokenOrId: string,
+    notes: string,
+    role?: StaffRole
+  ): { success: boolean; patient: PatientRecord | null } {
+    if (role !== 'clinical') {
+      throw new Error('Access denied: Clinical staff authorization required to update notes.');
+    }
+
+    const updated = updatePatientNotesInDb(tokenOrId, notes);
+    if (updated) {
+      this.syncFromDb();
+      const patient = this.getClinicalPatientRecord(tokenOrId, 'clinical');
+      return { success: true, patient };
+    }
+    return { success: false, patient: null };
   }
 }
 

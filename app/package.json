@@ -17,7 +17,8 @@
     "test:sqlite": "tsx test-sqlite-persistence.ts",
     "test:indian": "tsx test-indian-registration.ts",
     "test:scanner": "tsx test-gate-scanner.ts",
-    "test:all": "tsx test-smartqueue.ts && tsx test-http-security.ts && tsx test-ui-resilience.ts && tsx test-pass-registration-regression.ts && tsx test-sqlite-persistence.ts && tsx test-indian-registration.ts && tsx test-gate-scanner.ts"
+    "test:auth": "tsx test-staff-auth.ts",
+    "test:all": "tsx test-smartqueue.ts && tsx test-http-security.ts && tsx test-ui-resilience.ts && tsx test-pass-registration-regression.ts && tsx test-sqlite-persistence.ts && tsx test-indian-registration.ts && tsx test-gate-scanner.ts && tsx test-staff-auth.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

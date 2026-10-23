@@ -5,47 +5,29 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { queueDb } from './server/queueStore';
 import { OPDDepartment, RegistrationPayload, StaffRole } from './src/types/queue';
+import {
+  authenticateCredentials,
+  createStaffSessionToken,
+  verifyStaffSessionToken,
+  revokeStaffSessionToken,
+  checkLoginRateLimit,
+  recordFailedLoginAttempt,
+  resetLoginAttempts,
+  validateProductionAuthConfig,
+  authenticateStaff,
+  SECURITY_AUTH_TOKEN,
+  CLINICAL_AUTH_TOKEN,
+  type AuthContext,
+} from './server/auth';
+
+export { SECURITY_AUTH_TOKEN, CLINICAL_AUTH_TOKEN, authenticateStaff };
+export type { AuthContext };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = Number(process.env.PORT) || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
-
-// Staff Auth Constants - Configurable via environment variables (with secure demo defaults)
-export const SECURITY_AUTH_TOKEN = process.env.SECURITY_AUTH_TOKEN || 'sec-gate-token-402';
-export const CLINICAL_AUTH_TOKEN = process.env.CLINICAL_AUTH_TOKEN || 'cln-med-token-104';
-
-interface AuthContext {
-  role: StaffRole;
-  operatorId?: string;
-  name?: string;
-}
-
-function authenticateStaff(req: Request): AuthContext {
-  const authHeader = req.headers['authorization'] || '';
-  const tokenHeader = (req.headers['x-staff-token'] as string) || '';
-  const bearerToken = typeof authHeader === 'string' && authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-  const token = bearerToken || tokenHeader;
-
-  if (token === SECURITY_AUTH_TOKEN) {
-    return {
-      role: 'security',
-      operatorId: 'SEC-402',
-      name: 'Officer T. Briggs (Gate 02)',
-    };
-  }
-
-  if (token === CLINICAL_AUTH_TOKEN) {
-    return {
-      role: 'clinical',
-      operatorId: 'CLN-104',
-      name: 'Dr. Sarah Jenkins, MD',
-    };
-  }
-
-  return { role: 'public' };
-}
 
 // Rate Limiter for Gate Scanner Terminal
 const scanRateLimitMap = new Map<string, number[]>();
@@ -69,16 +51,40 @@ function checkScannerRateLimit(clientIp: string): { allowed: boolean; retryAfter
 }
 
 async function startServer() {
+  // Validate mandatory production configuration before starting server
+  const configCheck = validateProductionAuthConfig();
+  if (!configCheck.valid) {
+    console.error('===========================================================');
+    console.error(' [FATAL] PRODUCTION CONFIGURATION ERROR - STARTUP ABORTED:');
+    configCheck.errors.forEach((err) => console.error(`   ✗ ${err}`));
+    console.error('===========================================================');
+    throw new Error(
+      `Production startup aborted due to missing required credentials: ${configCheck.errors.join('; ')}`
+    );
+  }
+
   const app = express();
   app.use(express.json());
 
   
-  // Allow the deployed Netlify frontend to call this API
-  app.use((req: Request, res: Response, next) => {
-    const allowedOrigin = 'https://smartqueue-fsp.netlify.app';
+  // Allow deployed frontend origins (Netlify, custom domain, localhost)
+  const allowedOrigins = [
+    'https://smartqueue-fsp.netlify.app',
+    process.env.ALLOWED_ORIGIN,
+    process.env.CORS_ORIGIN,
+  ].filter(Boolean) as string[];
 
-    if (req.headers.origin === allowedOrigin) {
-      res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  app.use((req: Request, res: Response, next) => {
+    const origin = req.headers.origin;
+
+    if (
+      origin &&
+      (allowedOrigins.includes(origin) ||
+        origin.endsWith('.netlify.app') ||
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1'))
+    ) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Vary', 'Origin');
       res.setHeader(
         'Access-Control-Allow-Methods',
@@ -107,6 +113,101 @@ async function startServer() {
   // Health check
   app.get('/api/health', (_req: Request, res: Response) => {
     res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+  });
+
+  // POST /api/staff/login: Secure staff authentication endpoint
+  app.post('/api/staff/login', (req: Request, res: Response) => {
+    try {
+      const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+      const rateCheck = checkLoginRateLimit(clientIp);
+      if (!rateCheck.allowed) {
+        return res.status(429).json({
+          error: 'Too Many Requests',
+          message: `Too many failed login attempts. Please wait ${rateCheck.retryAfterSeconds} seconds before trying again.`,
+          retryAfter: rateCheck.retryAfterSeconds,
+        });
+      }
+
+      const { username, password } = req.body || {};
+      if (!username || !password) {
+        return res.status(400).json({
+          error: 'Bad Request',
+          message: 'Both username and password are required.',
+        });
+      }
+
+      const user = authenticateCredentials(username, password);
+      if (!user) {
+        recordFailedLoginAttempt(clientIp);
+        return res.status(401).json({
+          error: 'Unauthorized',
+          message: 'Invalid staff username or password.',
+        });
+      }
+
+      resetLoginAttempts(clientIp);
+      const { token, session } = createStaffSessionToken(user);
+      console.log(`[Staff Auth] Successful login for ${user.username} (${user.role}) from ${clientIp}`);
+
+      res.json({
+        success: true,
+        token,
+        user: {
+          username: user.username,
+          role: user.role,
+          name: user.name,
+          operatorId: user.operatorId,
+        },
+        expiresAt: new Date(session.expiresAt).toISOString(),
+      });
+    } catch (err: any) {
+      console.error('Staff login error:', err);
+      res.status(500).json({ error: 'Login failed', message: err.message });
+    }
+  });
+
+  // GET /api/staff/session: Validate active session and return user info
+  app.get('/api/staff/session', (req: Request, res: Response) => {
+    try {
+      const auth = authenticateStaff(req);
+      if (auth.role === 'public') {
+        return res.status(401).json({
+          authenticated: false,
+          error: 'Unauthorized',
+          message: 'No active authenticated staff session found.',
+        });
+      }
+
+      res.json({
+        authenticated: true,
+        user: {
+          role: auth.role,
+          operatorId: auth.operatorId,
+          name: auth.name,
+        },
+      });
+    } catch (err: any) {
+      console.error('Session check error:', err);
+      res.status(500).json({ error: 'Session check failed', message: err.message });
+    }
+  });
+
+  // POST /api/staff/logout: Invalidate active staff session token
+  app.post('/api/staff/logout', (req: Request, res: Response) => {
+    try {
+      const authHeader = req.headers['authorization'] || '';
+      const token =
+        typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
+          ? authHeader.slice(7).trim()
+          : '';
+      if (token) {
+        revokeStaffSessionToken(token);
+      }
+      res.json({ success: true, message: 'Logged out successfully' });
+    } catch (err: any) {
+      console.error('Logout error:', err);
+      res.status(500).json({ error: 'Logout failed', message: err.message });
+    }
   });
 
   // GET /api/queue: Public queue state (strictly sanitized DTO, no sensitive clinical records)
@@ -174,6 +275,35 @@ async function startServer() {
     } catch (err: any) {
       console.error('Error fetching patient chart:', err);
       res.status(500).json({ error: 'Failed to retrieve patient chart', message: err.message });
+    }
+  });
+
+  // PATCH /api/staff/patient/:query/notes: Update clinical consultation notes (Clinical role required)
+  app.patch('/api/staff/patient/:query/notes', (req: Request, res: Response) => {
+    try {
+      const auth = authenticateStaff(req);
+      if (auth.role !== 'clinical') {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Clinical staff role required to update patient notes.',
+        });
+      }
+
+      const { query } = req.params;
+      const { notes } = req.body;
+      if (typeof notes !== 'string') {
+        return res.status(400).json({ error: 'Notes string is required.' });
+      }
+
+      const result = queueDb.updatePatientNotes(query, notes, 'clinical');
+      if (!result.success || !result.patient) {
+        return res.status(404).json({ error: 'Patient not found', query });
+      }
+
+      res.json({ success: true, patient: result.patient });
+    } catch (err: any) {
+      console.error('Error updating patient notes:', err);
+      res.status(500).json({ error: 'Failed to update notes', message: err.message });
     }
   });
 

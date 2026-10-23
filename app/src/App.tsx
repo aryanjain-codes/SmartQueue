@@ -1,10 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { fetchQueueState, fetchClinicalQueueState, lookupTokenOrPatient } from './services/api';
+import {
+  fetchQueueState,
+  fetchClinicalQueueState,
+  lookupTokenOrPatient,
+  getStoredStaffSession,
+  staffVerifySession,
+  staffLogout,
+  StaffSession,
+} from './services/api';
 import { PatientQueueView, PatientRecord, PublicQueueStateDTO, SmartQueueState } from './types/queue';
 import { HomeView } from './components/HomeView';
 import { RegisterView } from './components/RegisterView';
 import { PatientLiveView } from './components/PatientLiveView';
 import { StaffDashboardView } from './components/StaffDashboardView';
+import { StaffLoginView } from './components/StaffLoginView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { PatientPassModal } from './components/PatientPassModal';
 import { GateScannerModal } from './components/GateScannerModal';
@@ -44,6 +53,7 @@ function getInitialPatientToken(): string | null {
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewMode>(getInitialView);
   const [staffRole, setStaffRole] = useState<'clinical' | 'security'>('clinical');
+  const [staffSession, setStaffSession] = useState<StaffSession | null>(getStoredStaffSession);
   const [registrationSuccess, setRegistrationSuccess] = useState<string | null>(null);
   const [publicQueueState, setPublicQueueState] = useState<PublicQueueStateDTO | null>(null);
   const [clinicalQueueState, setClinicalQueueState] = useState<SmartQueueState | null>(null);
@@ -131,7 +141,29 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Synchronize queue state from backend (public or clinical based on view)
+  // Verify stored staff session on mount
+  useEffect(() => {
+    const session = getStoredStaffSession();
+    if (session) {
+      setStaffSession(session);
+      setStaffRole(session.user.role);
+      staffVerifySession(session.token).then((res) => {
+        if (!res.authenticated) {
+          setStaffSession(null);
+          setClinicalQueueState(null);
+        }
+      });
+    }
+  }, []);
+
+  const handleStaffLogout = useCallback(async () => {
+    await staffLogout();
+    setStaffSession(null);
+    setClinicalQueueState(null);
+    navigateTo('home');
+  }, [navigateTo]);
+
+  // Synchronize queue state from backend (public or clinical based on view and auth)
   const syncQueue = useCallback(async (tokenOverride?: string) => {
     setIsSyncing(true);
     try {
@@ -140,10 +172,10 @@ export default function App() {
       setPublicQueueState(pubState);
       setSyncError(null);
 
-      // 2. If in staff view, fetch protected clinical queue state using clinical staff credentials
-      if (currentView === 'staff') {
+      // 2. If in staff view and authenticated as clinical staff, fetch protected clinical queue state
+      if (currentView === 'staff' && staffSession?.user.role === 'clinical') {
         try {
-          const clinState = await fetchClinicalQueueState();
+          const clinState = await fetchClinicalQueueState(staffSession.token);
           setClinicalQueueState(clinState);
         } catch (cErr) {
           console.warn('Clinical sync error:', cErr);
@@ -167,7 +199,7 @@ export default function App() {
       setIsSyncing(false);
       setInitialLoading(false);
     }
-  }, [currentView]);
+  }, [currentView, staffSession]);
 
   // Initial fetch and auto-polling every 4 seconds to maintain synchronized real-time state across clients
   useEffect(() => {
@@ -178,14 +210,14 @@ export default function App() {
     return () => clearInterval(interval);
   }, [syncQueue]);
 
-  // When switching views, if entering staff view, immediately fetch clinical state
+  // When switching views, if entering staff view with clinical role, immediately fetch clinical state
   useEffect(() => {
-    if (currentView === 'staff') {
-      fetchClinicalQueueState()
+    if (currentView === 'staff' && staffSession?.user.role === 'clinical') {
+      fetchClinicalQueueState(staffSession.token)
         .then((s) => setClinicalQueueState(s))
         .catch((err) => console.error('Failed to load clinical state for staff view:', err));
     }
-  }, [currentView]);
+  }, [currentView, staffSession]);
 
   const handleRegistered = (newPatient: PatientQueueView) => {
     updateCurrentPatient(newPatient);
@@ -449,19 +481,33 @@ export default function App() {
           )}
 
           {currentView === 'staff' && (
-            <StaffDashboardView
-              queueState={clinicalQueueState || (publicQueueState as unknown as SmartQueueState)}
-              staffRole={staffRole}
-              onToggleStaffRole={(role) => setStaffRole(role)}
-              onRefresh={() => syncQueue()}
-              onNavigate={navigateTo}
-              onOpenScanner={() => handleOpenGateScanner()}
-              onViewPatientChart={(p) => setChartModalPatient(p)}
-              onOpenPatientPass={(p) => {
-                updateCurrentPatient(p as any);
-                setPassModalOpen(true);
-              }}
-            />
+            staffSession ? (
+              <StaffDashboardView
+                queueState={clinicalQueueState || (publicQueueState as unknown as SmartQueueState)}
+                staffRole={staffSession.user.role}
+                staffSession={staffSession}
+                onLogout={handleStaffLogout}
+                onToggleStaffRole={(role) => setStaffRole(role)}
+                onRefresh={() => syncQueue()}
+                onNavigate={navigateTo}
+                onOpenScanner={() => handleOpenGateScanner()}
+                onViewPatientChart={(p) => setChartModalPatient(p)}
+                onOpenPatientPass={(p) => {
+                  updateCurrentPatient(p as any);
+                  setPassModalOpen(true);
+                }}
+              />
+            ) : (
+              <StaffLoginView
+                initialRole={staffRole}
+                onLoginSuccess={(session) => {
+                  setStaffSession(session);
+                  setStaffRole(session.user.role);
+                  syncQueue();
+                }}
+                onNavigateHome={() => navigateTo('home')}
+              />
+            )
           )}
 
           {currentView === 'analytics' && (

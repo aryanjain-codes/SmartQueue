@@ -13,9 +13,19 @@ import {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-export const DATA_DIR = path.resolve(__dirname, '../data');
-export const DB_PATH = path.join(DATA_DIR, 'smartqueue.db');
-export const BACKUP_DIR = path.join(DATA_DIR, 'backups');
+const defaultDataDir = path.resolve(__dirname, '../data');
+
+// Allow custom database file path or custom data directory via environment variables
+export const DB_PATH = process.env.SQLITE_DB_PATH
+  ? path.resolve(process.env.SQLITE_DB_PATH)
+  : (process.env.DATA_DIR || process.env.SMARTQUEUE_DATA_DIR)
+  ? path.resolve(process.env.DATA_DIR || process.env.SMARTQUEUE_DATA_DIR!, 'smartqueue.db')
+  : path.join(defaultDataDir, 'smartqueue.db');
+
+export const DATA_DIR = path.dirname(DB_PATH);
+export const BACKUP_DIR = process.env.SQLITE_BACKUP_DIR
+  ? path.resolve(process.env.SQLITE_BACKUP_DIR)
+  : path.join(DATA_DIR, 'backups');
 
 let dbInstance: Database.Database | null = null;
 
@@ -24,9 +34,27 @@ let dbInstance: Database.Database | null = null;
  */
 export function getDb(): Database.Database {
   if (!dbInstance) {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+    const parentDir = path.dirname(DB_PATH);
+    if (!fs.existsSync(parentDir)) {
+      fs.mkdirSync(parentDir, { recursive: true });
     }
+    if (!fs.existsSync(BACKUP_DIR)) {
+      fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    }
+
+    // If a custom DB_PATH is specified (e.g. on a persistent disk) and the destination
+    // DB does not exist yet, but a local database exists at defaultDataDir, copy it over
+    // so existing records and state are never left behind.
+    const defaultDbPath = path.join(defaultDataDir, 'smartqueue.db');
+    if (DB_PATH !== defaultDbPath && !fs.existsSync(DB_PATH) && fs.existsSync(defaultDbPath)) {
+      try {
+        console.log(`[SQLite] Copying existing database from ${defaultDbPath} to persistent path ${DB_PATH}...`);
+        fs.copyFileSync(defaultDbPath, DB_PATH);
+      } catch (copyErr) {
+        console.warn('[SQLite] Could not copy existing database file to custom path:', copyErr);
+      }
+    }
+
     dbInstance = new Database(DB_PATH);
     dbInstance.pragma('journal_mode = WAL');
     dbInstance.pragma('foreign_keys = ON');
@@ -34,6 +62,20 @@ export function getDb(): Database.Database {
     initSchema(dbInstance);
   }
   return dbInstance;
+}
+
+/**
+ * Close database connection if open.
+ */
+export function closeDb(): void {
+  if (dbInstance) {
+    try {
+      dbInstance.close();
+    } catch {
+      // ignore
+    }
+    dbInstance = null;
+  }
 }
 
 /**
@@ -382,6 +424,28 @@ export function updatePassStatusDb(
 }
 
 /**
+ * Update clinical consultation notes for a patient in SQLite.
+ */
+export function updatePatientNotes(query: string, notes: string): boolean {
+  const db = getDb();
+  const trimmed = query.trim().toUpperCase();
+  const stmt = db.prepare(`
+    UPDATE patients
+    SET notes = ?
+    WHERE UPPER(id) = ?
+       OR (mrn IS NOT NULL AND UPPER(mrn) = ?)
+       OR id IN (
+         SELECT patient_id FROM queue_entries WHERE UPPER(token) = ?
+       )
+       OR id IN (
+         SELECT patient_id FROM patient_passes WHERE UPPER(pass_token) = ?
+       )
+  `);
+  const result = stmt.run(notes, trimmed, trimmed, trimmed, trimmed);
+  return result.changes > 0;
+}
+
+/**
  * Insert a gate scan audit log entry into SQLite.
  */
 export function insertScanLog(entry: GateScanLogEntry): void {
@@ -471,14 +535,17 @@ export function migrateFromJsonIfEmpty(seedGenerator: () => PatientRecord[]): vo
   console.log('[SQLite] Database is empty. Initiating initial population...');
   let recordsToInsert: PatientRecord[] = [];
 
-  const legacyJsonPath = path.join(DATA_DIR, 'smartqueue.json');
+  const legacyJsonPath = fs.existsSync(path.join(DATA_DIR, 'smartqueue.json'))
+    ? path.join(DATA_DIR, 'smartqueue.json')
+    : path.join(defaultDataDir, 'smartqueue.json');
+
   if (fs.existsSync(legacyJsonPath)) {
     try {
       const raw = fs.readFileSync(legacyJsonPath, 'utf-8');
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
         recordsToInsert = parsed;
-        console.log(`[SQLite] Migrating ${parsed.length} existing records from smartqueue.json`);
+        console.log(`[SQLite] Migrating ${parsed.length} existing records from ${legacyJsonPath}`);
       }
     } catch (err) {
       console.warn('[SQLite] Could not read legacy smartqueue.json, falling back to seed generator', err);
@@ -503,7 +570,10 @@ export function migrateFromJsonIfEmpty(seedGenerator: () => PatientRecord[]): vo
   }
 
   // Migrate scan logs if available
-  const legacyScansPath = path.join(DATA_DIR, 'gate_scans.json');
+  const legacyScansPath = fs.existsSync(path.join(DATA_DIR, 'gate_scans.json'))
+    ? path.join(DATA_DIR, 'gate_scans.json')
+    : path.join(defaultDataDir, 'gate_scans.json');
+
   if (fs.existsSync(legacyScansPath)) {
     try {
       const rawScans = fs.readFileSync(legacyScansPath, 'utf-8');
