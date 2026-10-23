@@ -4,19 +4,25 @@ import { PatientQueueView, AnyQueueState } from '../types/queue';
 interface PatientLiveViewProps {
   patientView: PatientQueueView;
   queueState: AnyQueueState | null;
+  successMessage?: string | null;
+  onDismissSuccess?: () => void;
   onRefresh: () => void;
   onNavigate: (view: 'home' | 'register' | 'patient' | 'staff' | 'analytics') => void;
   onOpenPass: () => void;
   onLookupToken: () => void;
+  onOpenScanner?: () => void;
 }
 
 export const PatientLiveView: React.FC<PatientLiveViewProps> = ({
   patientView,
   queueState,
+  successMessage,
+  onDismissSuccess,
   onRefresh,
   onNavigate,
   onOpenPass,
   onLookupToken,
+  onOpenScanner,
 }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [assistanceRequested, setAssistanceRequested] = useState(false);
@@ -65,10 +71,11 @@ export const PatientLiveView: React.FC<PatientLiveViewProps> = ({
               <span>Switch</span>
             </button>
             <div className="w-8 h-8 rounded-full bg-primary-container text-white flex items-center justify-center font-bold text-xs border border-outline-variant">
-              {patientView.fullName
+              {(patientView.fullName || 'Patient')
                 .split(' ')
                 .map((n) => n[0])
-                .join('')}
+                .join('')
+                .slice(0, 2) || 'PT'}
             </div>
           </div>
         </div>
@@ -102,11 +109,43 @@ export const PatientLiveView: React.FC<PatientLiveViewProps> = ({
 
       {/* Main Content Area */}
       <main className="px-4 pt-3 flex flex-col gap-3.5">
+        {/* Registration Success Notification Banner */}
+        {successMessage && (
+          <div className="bg-emerald-50 border-2 border-emerald-500 rounded-xl p-3 flex items-start justify-between shadow-xs animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-start gap-2.5">
+              <span className="material-symbols-outlined text-emerald-600 text-xl shrink-0 mt-0.5">
+                check_circle
+              </span>
+              <div>
+                <h4 className="text-xs font-bold text-emerald-950">Registration Complete!</h4>
+                <p className="text-[11px] text-emerald-800 leading-snug mt-0.5">{successMessage}</p>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <button
+                    onClick={onOpenPass}
+                    className="px-2 py-0.5 bg-emerald-700 text-white rounded text-[10px] font-bold tracking-wide hover:bg-emerald-800 transition-colors shadow-xs"
+                  >
+                    View QR Pass Now
+                  </button>
+                </div>
+              </div>
+            </div>
+            {onDismissSuccess && (
+              <button
+                onClick={onDismissSuccess}
+                className="text-emerald-700 hover:text-emerald-950 p-0.5 rounded transition-colors"
+                title="Dismiss"
+              >
+                <span className="material-symbols-outlined text-sm">close</span>
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Patient ID & Status summary banner */}
         <section className="bg-surface-container-lowest rounded-lg border border-outline-variant p-2.5 flex items-center justify-between shadow-xs">
           <div className="flex flex-col">
             <span className="font-semibold text-xs text-primary">
-              {patientView.fullName} ({patientView.age}, {patientView.gender.charAt(0)})
+              {patientView.fullName || 'Patient'} ({patientView.age ?? '—'}, {patientView.gender ? patientView.gender.charAt(0) : 'U'})
             </span>
             <div className="flex items-center gap-1 text-[11px] font-mono">
               <span className="text-outline">Patient ID:</span>
@@ -396,33 +435,43 @@ export const PatientLiveView: React.FC<PatientLiveViewProps> = ({
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-2 py-1.5 pb-safe bg-surface-container-lowest shadow-sm max-w-md left-1/2 -translate-x-1/2 border-t border-outline-variant/40">
+      <nav className="fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-1.5 py-1.5 pb-safe bg-surface-container-lowest shadow-sm max-w-md left-1/2 -translate-x-1/2 border-t border-outline-variant/40">
         <button
           onClick={() => onNavigate('home')}
-          className="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary px-3 py-1 transition-colors"
+          className="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary px-2.5 py-1 transition-colors"
         >
           <span className="material-symbols-outlined text-xl">home</span>
           <span className="text-[10px] mt-0.5">Home</span>
         </button>
         <button
           onClick={() => onNavigate('patient')}
-          className="flex flex-col items-center justify-center text-secondary bg-secondary-container/20 rounded-lg px-3 py-1 font-semibold"
+          className="flex flex-col items-center justify-center text-secondary bg-secondary-container/20 rounded-lg px-2.5 py-1 font-semibold"
         >
           <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
             queue
           </span>
           <span className="text-[10px] mt-0.5">Live Queue</span>
         </button>
+        {onOpenScanner && (
+          <button
+            onClick={onOpenScanner}
+            className="flex flex-col items-center justify-center text-primary px-2.5 py-1 transition-colors hover:text-secondary group"
+            title="Open Gate Scanner"
+          >
+            <span className="material-symbols-outlined text-xl font-bold group-hover:scale-110 transition-transform">qr_code_scanner</span>
+            <span className="text-[10px] mt-0.5 font-bold">Scan Pass</span>
+          </button>
+        )}
         <button
           onClick={() => onNavigate('register')}
-          className="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary px-3 py-1 transition-colors"
+          className="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary px-2.5 py-1 transition-colors"
         >
           <span className="material-symbols-outlined text-xl">assignment</span>
           <span className="text-[10px] mt-0.5">Check-In</span>
         </button>
         <button
           onClick={() => onNavigate('staff')}
-          className="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary px-3 py-1 transition-colors"
+          className="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary px-2.5 py-1 transition-colors"
         >
           <span className="material-symbols-outlined text-xl">badge</span>
           <span className="text-[10px] mt-0.5">Staff</span>

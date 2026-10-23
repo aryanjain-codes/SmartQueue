@@ -5,9 +5,10 @@ import { PatientQueueView } from '../types/queue';
 interface TokenLookupModalProps {
   onClose: () => void;
   onPatientFound: (patient: PatientQueueView) => void;
+  recentTokens?: Array<{ token: string; label: string }>;
 }
 
-export const TokenLookupModal: React.FC<TokenLookupModalProps> = ({ onClose, onPatientFound }) => {
+export const TokenLookupModal: React.FC<TokenLookupModalProps> = ({ onClose, onPatientFound, recentTokens = [] }) => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,13 +29,19 @@ export const TokenLookupModal: React.FC<TokenLookupModalProps> = ({ onClose, onP
     }
   };
 
-  const sampleTokens = [
-    { token: 'MED-042', name: 'Eleanor Vance (Waiting)' },
-    { token: 'MED-039', name: 'Arthur Pendelton (Serving)' },
-    { token: 'MED-040', name: 'David Ross (Urgent)' },
-    { token: 'CARD-013', name: 'Elena Gomez (Cardio)' },
-    { token: 'ORTH-025', name: 'Samantha Reed (Ortho)' },
+  const defaultTokens = [
+    { token: 'MED-042', label: 'Eleanor Vance (Waiting)' },
+    { token: 'MED-039', label: 'Arthur Pendelton (Serving)' },
+    { token: 'MED-040', label: 'David Ross (Urgent)' },
+    { token: 'CARD-013', label: 'Elena Gomez (Cardio)' },
+    { token: 'ORTH-025', label: 'Samantha Reed (Ortho)' },
   ];
+
+  // Merge recent tokens with default anchors, avoiding duplicates
+  const displayedTokens = [
+    ...recentTokens,
+    ...defaultTokens.filter((d) => !recentTokens.some((r) => r.token === d.token)),
+  ].slice(0, 7);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-primary/60 backdrop-blur-xs">
@@ -94,7 +101,7 @@ export const TokenLookupModal: React.FC<TokenLookupModalProps> = ({ onClose, onP
               Quick Test Patient Tokens:
             </span>
             <div className="space-y-1">
-              {sampleTokens.map((s) => (
+              {displayedTokens.map((s) => (
                 <button
                   key={s.token}
                   type="button"
@@ -102,7 +109,7 @@ export const TokenLookupModal: React.FC<TokenLookupModalProps> = ({ onClose, onP
                   className="w-full p-2 rounded-lg bg-surface hover:bg-surface-container border border-outline-variant/60 flex items-center justify-between text-xs transition-colors text-left"
                 >
                   <span className="font-mono font-bold text-primary">{s.token}</span>
-                  <span className="text-on-surface-variant text-[11px]">{s.name}</span>
+                  <span className="text-on-surface-variant text-[11px]">{s.label}</span>
                 </button>
               ))}
             </div>

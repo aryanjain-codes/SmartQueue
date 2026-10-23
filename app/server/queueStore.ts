@@ -16,10 +16,27 @@ import {
   GateScanLogEntry,
   StaffRole,
 } from '../src/types/queue';
+import {
+  getDb,
+  getAllPatients,
+  findPatientByQuery,
+  isIdExists,
+  isTokenExists,
+  isPassTokenExists,
+  insertPatientRecord,
+  updateQueueEntry,
+  updatePassStatusDb,
+  insertScanLog,
+  getRecentScanLogsFromDb,
+  migrateFromJsonIfEmpty,
+  resetDatabase,
+  backupDatabase,
+  DATA_DIR,
+  DB_PATH,
+} from './sqliteDb';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DATA_DIR = path.resolve(__dirname, '../data');
 const DATA_FILE = path.join(DATA_DIR, 'smartqueue.json');
 const SCANS_FILE = path.join(DATA_DIR, 'gate_scans.json');
 
@@ -74,7 +91,7 @@ export function generateSecurePassId(): string {
   return `SQ-PASS-${token}-B`;
 }
 
-function generateInitialSeed(): PatientRecord[] {
+export function generateInitialSeed(): PatientRecord[] {
   const now = Date.now();
   const thirtyDaysAhead = new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString();
   const pastExpiredDate = new Date(now - 5 * 24 * 60 * 60 * 1000).toISOString(); // 5 days ago
@@ -394,55 +411,29 @@ class QueueDatabase {
   private scanLogs: GateScanLogEntry[] = [];
 
   constructor() {
-    this.ensureDataFiles();
+    // 1. Initialize SQLite schema and migrate from existing JSON if SQLite empty
+    migrateFromJsonIfEmpty(generateInitialSeed);
+    // 2. Synchronize active state from SQLite
+    this.syncFromDb();
   }
 
-  private ensureDataFiles() {
+  /**
+   * Sync in-memory cache directly from SQLite and write a JSON backup snapshot.
+   */
+  private syncFromDb(): void {
     try {
-      if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-      }
-
-      if (fs.existsSync(DATA_FILE)) {
-        const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          this.patients = parsed;
-          // Ensure explicit test fixtures exist for verification
-          const seeds = generateInitialSeed();
-          let added = false;
-          for (const s of seeds) {
-            if (!this.patients.some((p) => p.passId === s.passId || p.token === s.token)) {
-              this.patients.push(s);
-              added = true;
-            }
-          }
-          if (added) this.persist();
-        } else {
-          this.patients = generateInitialSeed();
-          this.persist();
-        }
-      } else {
-        this.patients = generateInitialSeed();
-        this.persist();
-      }
-
-      // Scans file
-      if (fs.existsSync(SCANS_FILE)) {
-        const rawScans = fs.readFileSync(SCANS_FILE, 'utf-8');
-        const parsedScans = JSON.parse(rawScans);
-        if (Array.isArray(parsedScans)) {
-          this.scanLogs = parsedScans;
-        }
-      }
+      this.patients = getAllPatients();
+      this.scanLogs = getRecentScanLogsFromDb(100);
+      this.persistJsonSnapshot();
     } catch (err) {
-      console.warn('Error reading data files, initializing fresh seed', err);
-      this.patients = generateInitialSeed();
-      this.persist();
+      console.error('[QueueStore] Error syncing from SQLite database:', err);
     }
   }
 
-  private persist() {
+  /**
+   * Maintain backward-compatible JSON file snapshot for file-based tests and inspection.
+   */
+  private persistJsonSnapshot(): void {
     try {
       if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -450,15 +441,18 @@ class QueueDatabase {
       fs.writeFileSync(DATA_FILE, JSON.stringify(this.patients, null, 2), 'utf-8');
       fs.writeFileSync(SCANS_FILE, JSON.stringify(this.scanLogs.slice(-100), null, 2), 'utf-8');
     } catch (err) {
-      console.error('Failed to persist database to file:', err);
+      console.error('[QueueStore] Failed to write JSON backup snapshot:', err);
     }
   }
 
-  public resetDemo() {
-    this.patients = generateInitialSeed();
-    this.scanLogs = [];
-    this.persist();
+  public resetDemo(): PublicQueueStateDTO {
+    resetDatabase(generateInitialSeed());
+    this.syncFromDb();
     return this.getPublicState();
+  }
+
+  public backupDatabase(): string {
+    return backupDatabase();
   }
 
   /**
@@ -578,7 +572,7 @@ class QueueDatabase {
    */
   public getPatientSelfView(tokenOrId: string): PatientQueueView | null {
     const query = tokenOrId.trim().toUpperCase();
-    const patient = this.patients.find(
+    const patient = findPatientByQuery(query) || this.patients.find(
       (p) =>
         p.token.toUpperCase() === query ||
         p.passId.toUpperCase() === query ||
@@ -622,12 +616,14 @@ class QueueDatabase {
     }
     const query = tokenOrId.trim().toUpperCase();
     return (
+      findPatientByQuery(query) ||
       this.patients.find(
         (p) =>
           p.token.toUpperCase() === query ||
           p.passId.toUpperCase() === query ||
           p.id.toUpperCase() === query
-      ) || null
+      ) ||
+      null
     );
   }
 
@@ -649,14 +645,27 @@ class QueueDatabase {
       }
     }
 
-    const token = `${config.prefix}-${String(nextNum).padStart(3, '0')}`;
-    const id = `SJH-2025-${Math.floor(1000 + Math.random() * 9000)}`;
+    // Generate unique sequential token number checked against SQLite and in-memory state
+    let token = `${config.prefix}-${String(nextNum).padStart(3, '0')}`;
+    while (isTokenExists(token) || this.patients.some((p) => p.token === token)) {
+      nextNum++;
+      token = `${config.prefix}-${String(nextNum).padStart(3, '0')}`;
+    }
 
-    // Cryptographically secure, unguessable pass token (Priority 2)
-    const passId = generateSecurePassId();
+    // Generate unique Patient ID checked against SQLite
+    let id = `SJH-2025-${Math.floor(1000 + Math.random() * 9000)}`;
+    while (isIdExists(id) || this.patients.some((p) => p.id === id)) {
+      id = `SJH-2025-${Math.floor(1000 + Math.random() * 9000)}`;
+    }
+
+    // Cryptographically secure, unguessable pass token with guaranteed uniqueness
+    let passId = generateSecurePassId();
+    while (isPassTokenExists(passId) || this.patients.some((p) => p.passId === passId)) {
+      passId = generateSecurePassId();
+    }
 
     const now = Date.now();
-    // Exactly 30 days validity period (Priority 2 & 3)
+    // Exactly 30 days validity period
     const passExpiry = new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString();
 
     let triageSeverity: TriageSeverity = 'Routine';
@@ -693,8 +702,9 @@ class QueueDatabase {
       registeredAt: new Date(now).toISOString(),
     };
 
-    this.patients.push(newRecord);
-    this.persist();
+    // Insert into SQLite database transactionally
+    insertPatientRecord(newRecord);
+    this.syncFromDb();
 
     return this.getPatientSelfView(newRecord.token)!;
   }
@@ -707,9 +717,11 @@ class QueueDatabase {
     const config = DEPARTMENT_CONFIGS[department];
     const currentServing = this.patients.find((p) => p.department === department && p.status === 'SERVING');
     if (currentServing) {
-      currentServing.status = 'COMPLETED';
-      currentServing.completedAt = new Date().toISOString();
-      currentServing.location = 'Discharged / Consultation Complete';
+      updateQueueEntry(currentServing.token, {
+        status: 'COMPLETED',
+        completedAt: new Date().toISOString(),
+        location: 'Discharged / Consultation Complete',
+      });
     }
 
     const waitingList = this.patients.filter((p) => p.department === department && p.status === 'WAITING');
@@ -722,13 +734,17 @@ class QueueDatabase {
 
     const nextPatient = waitingList[0] || null;
     if (nextPatient) {
-      nextPatient.status = 'SERVING';
-      nextPatient.calledAt = new Date().toISOString();
-      nextPatient.location = `Consultation ${config.room}`;
+      updateQueueEntry(nextPatient.token, {
+        status: 'SERVING',
+        calledAt: new Date().toISOString(),
+        location: `Consultation ${config.room}`,
+      });
     }
 
-    this.persist();
-    return { previous: currentServing || null, current: nextPatient };
+    this.syncFromDb();
+    const updatedServing = nextPatient ? this.patients.find((p) => p.token === nextPatient.token) || null : null;
+    const updatedPrev = currentServing ? this.patients.find((p) => p.token === currentServing.token) || null : null;
+    return { previous: updatedPrev, current: updatedServing };
   }
 
   public completeConsultation(department: OPDDepartment, role?: StaffRole): PatientRecord | null {
@@ -738,11 +754,13 @@ class QueueDatabase {
 
     const currentServing = this.patients.find((p) => p.department === department && p.status === 'SERVING');
     if (currentServing) {
-      currentServing.status = 'COMPLETED';
-      currentServing.completedAt = new Date().toISOString();
-      currentServing.location = 'Discharged / Consultation Complete';
-      this.persist();
-      return currentServing;
+      updateQueueEntry(currentServing.token, {
+        status: 'COMPLETED',
+        completedAt: new Date().toISOString(),
+        location: 'Discharged / Consultation Complete',
+      });
+      this.syncFromDb();
+      return this.patients.find((p) => p.token === currentServing.token) || null;
     }
     return null;
   }
@@ -752,12 +770,14 @@ class QueueDatabase {
       throw new Error('Access denied: Clinical staff role required to place lab hold.');
     }
 
-    const patient = this.patients.find((p) => p.token.toUpperCase() === token.toUpperCase());
-    if (patient) {
-      patient.status = 'HOLD_LAB';
-      patient.location = 'Diagnostic Lab / X-Ray Annex';
-      this.persist();
-      return patient;
+    const updated = updateQueueEntry(token, {
+      status: 'HOLD_LAB',
+      location: 'Diagnostic Lab / X-Ray Annex',
+    });
+
+    if (updated) {
+      this.syncFromDb();
+      return this.patients.find((p) => p.token.toUpperCase() === token.toUpperCase()) || null;
     }
     return null;
   }
@@ -774,27 +794,32 @@ class QueueDatabase {
     const config = DEPARTMENT_CONFIGS[dept];
     const currentServing = this.patients.find((p) => p.department === dept && p.status === 'SERVING');
     if (currentServing && currentServing.id !== target.id) {
-      currentServing.status = 'COMPLETED';
-      currentServing.completedAt = new Date().toISOString();
-      currentServing.location = 'Discharged';
+      updateQueueEntry(currentServing.token, {
+        status: 'COMPLETED',
+        completedAt: new Date().toISOString(),
+        location: 'Discharged',
+      });
     }
 
-    target.status = 'SERVING';
-    target.calledAt = new Date().toISOString();
-    target.location = `Consultation ${config.room}`;
-    this.persist();
-    return target;
+    updateQueueEntry(target.token, {
+      status: 'SERVING',
+      calledAt: new Date().toISOString(),
+      location: `Consultation ${config.room}`,
+    });
+
+    this.syncFromDb();
+    return this.patients.find((p) => p.token.toUpperCase() === token.toUpperCase()) || null;
   }
 
   /**
-   * Secure Gate Pass Verification (Priority 1, 2, & 3):
+   * Secure Gate Pass Verification:
    * - Requires authenticated staff role ('security' or 'clinical').
    * - Returns ONLY GateClearanceDTO with masked name and operational details.
    * - Strictly excludes contactNumber, MRN, chiefComplaint, allergies, and clinical notes.
    * - Evaluates true server-side expiration (30 days from issue).
    * - Evaluates true server-side revocation.
    * - Detects duplicate scans within a 5-minute cooldown window.
-   * - Logs every scan event persistently.
+   * - Logs every scan event persistently in SQLite.
    */
   public verifyGatePass(
     code: string,
@@ -820,8 +845,8 @@ class QueueDatabase {
         gateId,
         isDuplicate: false,
       };
-      this.scanLogs.push(entry);
-      this.persist();
+      insertScanLog(entry);
+      this.syncFromDb();
       return {
         outcome: 'INVALID',
         message: 'Empty pass code presented.',
@@ -829,8 +854,8 @@ class QueueDatabase {
       };
     }
 
-    // Look up patient matching passId or token
-    const patient = this.patients.find(
+    // Look up patient matching passId or token from SQLite
+    const patient = findPatientByQuery(query) || this.patients.find(
       (p) => p.passId.toUpperCase() === query || p.token.toUpperCase() === query
     );
 
@@ -844,8 +869,8 @@ class QueueDatabase {
         gateId,
         isDuplicate: false,
       };
-      this.scanLogs.push(entry);
-      this.persist();
+      insertScanLog(entry);
+      this.syncFromDb();
       return {
         outcome: 'INVALID',
         message: 'Unrecognized pass or token. Non-SmartQueue signature.',
@@ -869,8 +894,8 @@ class QueueDatabase {
         token: patient.token,
         isDuplicate: false,
       };
-      this.scanLogs.push(entry);
-      this.persist();
+      insertScanLog(entry);
+      this.syncFromDb();
 
       return {
         outcome: 'EXPIRED',
@@ -896,8 +921,8 @@ class QueueDatabase {
         token: patient.token,
         isDuplicate: false,
       };
-      this.scanLogs.push(entry);
-      this.persist();
+      insertScanLog(entry);
+      this.syncFromDb();
 
       return {
         outcome: 'REVOKED',
@@ -931,7 +956,7 @@ class QueueDatabase {
       duplicateWarning = `Duplicate scan detected: Pass was already verified ${timeStr} ago at ${recentScan.gateId}. Verify visitor credentials.`;
     }
 
-    // Record verified scan log
+    // Record verified scan log into SQLite
     const entry: GateScanLogEntry = {
       id: crypto.randomUUID(),
       passIdOrCode: patient.passId,
@@ -943,8 +968,8 @@ class QueueDatabase {
       token: patient.token,
       isDuplicate,
     };
-    this.scanLogs.push(entry);
-    this.persist();
+    insertScanLog(entry);
+    this.syncFromDb();
 
     // Return sanitized operational DTO - strictly NO clinical details
     return {
@@ -966,7 +991,42 @@ class QueueDatabase {
   }
 
   public getRecentScanLogs(limit = 15): GateScanLogEntry[] {
-    return this.scanLogs.slice(-limit).reverse();
+    return getRecentScanLogsFromDb(limit);
+  }
+
+  /**
+   * Update a patient's pass status (active/expired/revoked) in SQLite.
+   * Requires Security or Clinical staff authorization.
+   */
+  public updatePassStatus(
+    tokenOrPassId: string,
+    status: 'active' | 'expired' | 'revoked',
+    role?: StaffRole
+  ): { success: boolean; patient: PatientQueueView | null } {
+    if (role !== 'security' && role !== 'clinical') {
+      throw new Error('Access denied: Staff authorization required to update pass status.');
+    }
+
+    const query = tokenOrPassId.trim().toUpperCase();
+    const patient = findPatientByQuery(query) || this.patients.find(
+      (p) => p.passId.toUpperCase() === query || p.token.toUpperCase() === query || p.id.toUpperCase() === query
+    );
+
+    if (!patient) {
+      return { success: false, patient: null };
+    }
+
+    let newExpiry: string | undefined = undefined;
+    if (status === 'expired') {
+      newExpiry = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    } else if (status === 'active') {
+      newExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    }
+
+    updatePassStatusDb(patient.passId, status, newExpiry);
+    this.syncFromDb();
+
+    return { success: true, patient: this.getPatientSelfView(patient.token) };
   }
 }
 

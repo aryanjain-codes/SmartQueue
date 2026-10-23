@@ -9,23 +9,60 @@ interface RegisterViewProps {
   onLookupToken: () => void;
 }
 
+/**
+ * Strips formatting, removes accidental duplicate country code (+91/91/0),
+ * and formats the 10-digit Indian mobile number as "XXXXX XXXXX".
+ */
+export function cleanAndFormatIndianPhone(input: string): string {
+  let val = input.trim();
+
+  // Strip duplicate country codes if pasted or typed
+  if (val.startsWith('+91')) {
+    val = val.slice(3);
+  } else if (val.startsWith('91') && val.replace(/\D/g, '').length > 10) {
+    val = val.slice(2);
+  } else if (val.startsWith('0') && val.replace(/\D/g, '').length === 11) {
+    val = val.slice(1);
+  }
+
+  // Extract digits only up to 10 max
+  const digits = val.replace(/\D/g, '').slice(0, 10);
+
+  if (digits.length <= 5) {
+    return digits;
+  }
+  return `${digits.slice(0, 5)} ${digits.slice(5)}`;
+}
+
 export const RegisterView: React.FC<RegisterViewProps> = ({
   queueState,
   onRegistered,
   onNavigate,
   onLookupToken,
 }) => {
-  const [fullName, setFullName] = useState('Eleanor Vance');
-  const [age, setAge] = useState('34');
-  const [gender, setGender] = useState('Female');
-  const [contactNumber, setContactNumber] = useState('(555) 234-8910');
-  const [mrn, setMrn] = useState('SJ-98214-X');
+  const [fullName, setFullName] = useState('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState('Male');
+  const [countryCode, setCountryCode] = useState('+91');
+  const [contactNumber, setContactNumber] = useState('');
+  const [mrn, setMrn] = useState('');
   const [department, setDepartment] = useState<OPDDepartment>('General Medicine');
-  const [chiefComplaint, setChiefComplaint] = useState(
-    'Mild recurrent migraine and photophobia for 3 days'
-  );
-  const [allergies, setAllergies] = useState<string[]>(['Penicillin']);
-  const [consent, setConsent] = useState(true);
+  const [chiefComplaint, setChiefComplaint] = useState('');
+  const [allergies, setAllergies] = useState<string[]>([]);
+  const [consent, setConsent] = useState(false);
+
+  const fillSampleDemoData = () => {
+    setFullName('Aryan Verma');
+    setAge('28');
+    setGender('Male');
+    setCountryCode('+91');
+    setContactNumber('98765 43210');
+    setMrn('SJH-IND-44102');
+    setDepartment('General Medicine');
+    setChiefComplaint('Mild recurrent migraine and photophobia for 2 days');
+    setAllergies(['None reported']);
+    setConsent(true);
+  };
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,10 +93,27 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
       setError('Please provide a valid age between 0 and 125.');
       return;
     }
-    if (!contactNumber.trim() || contactNumber.trim().length < 7) {
-      setError('Please provide a valid contact phone number.');
-      return;
+
+    let formattedPhone = contactNumber.trim();
+    if (countryCode === '+91') {
+      const digits = contactNumber.replace(/\D/g, '');
+      if (digits.length !== 10) {
+        setError('Please provide a valid 10-digit Indian mobile number (+91 XXXXX XXXXX).');
+        return;
+      }
+      if (!/^[6-9]\d{9}$/.test(digits)) {
+        setError('Indian mobile numbers must start with 6, 7, 8, or 9 (e.g. +91 98765 43210).');
+        return;
+      }
+      formattedPhone = `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
+    } else {
+      if (!formattedPhone || formattedPhone.replace(/\D/g, '').length < 7) {
+        setError('Please provide a valid contact mobile number.');
+        return;
+      }
+      formattedPhone = `${countryCode} ${formattedPhone}`;
     }
+
     if (!chiefComplaint.trim()) {
       setError('Please describe your primary reason or chief complaint.');
       return;
@@ -75,7 +129,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
         fullName: fullName.trim(),
         age: ageNum,
         gender,
-        contactNumber: contactNumber.trim(),
+        contactNumber: formattedPhone,
         mrn: mrn.trim() || undefined,
         department,
         chiefComplaint: chiefComplaint.trim(),
@@ -155,12 +209,22 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
           </div>
         )}
 
-        {/* Required Notice */}
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-container-low rounded-lg border border-outline-variant/40 text-xs text-on-surface-variant">
-          <span className="material-symbols-outlined text-secondary text-base">info</span>
-          <span>
-            Fields marked with <span className="text-error font-semibold">*</span> are required for triage prioritization.
-          </span>
+        {/* Required Notice & Demo Fill Option */}
+        <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-surface-container-low rounded-lg border border-outline-variant/40 text-xs text-on-surface-variant">
+          <div className="flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-secondary text-base">info</span>
+            <span>
+              Fields marked with <span className="text-error font-semibold">*</span> are required.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={fillSampleDemoData}
+            className="text-[11px] text-secondary hover:text-primary font-semibold underline underline-offset-2 transition-colors cursor-pointer"
+            title="Auto-fill with sample synthetic data for demonstration"
+          >
+            Fill Demo Sample
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -176,7 +240,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g. Eleanor Vance"
+                placeholder="e.g. Aryan"
                 className="w-full h-10 px-3 pr-9 rounded-lg border border-outline-variant bg-white text-on-surface text-sm focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
               />
               {fullName.trim().length >= 2 && (
@@ -217,8 +281,8 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
                   onChange={(e) => setGender(e.target.value)}
                   className="w-full h-10 pl-3 pr-8 rounded-lg border border-outline-variant bg-white text-on-surface text-sm appearance-none focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
                 >
-                  <option value="Female">Female</option>
                   <option value="Male">Male</option>
+                  <option value="Female">Female</option>
                   <option value="Non-Binary">Non-Binary</option>
                   <option value="Prefer not to say">Prefer not to say</option>
                 </select>
@@ -234,21 +298,45 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
             <label className="block text-xs font-semibold text-primary" htmlFor="contactNumber">
               Contact Mobile Number <span className="text-error">*</span>
             </label>
-            <div className="flex rounded-lg">
-              <span className="inline-flex items-center px-2.5 rounded-l-lg border border-r-0 border-outline-variant bg-surface-container-low text-primary font-mono text-xs font-semibold">
-                +1 (US)
-              </span>
+            <div className="flex rounded-lg shadow-2xs">
+              <select
+                value={countryCode}
+                onChange={(e) => {
+                  const newCode = e.target.value;
+                  setCountryCode(newCode);
+                  if (newCode === '+91') {
+                    setContactNumber((prev) => cleanAndFormatIndianPhone(prev));
+                  }
+                }}
+                className="inline-flex items-center px-2 rounded-l-lg border border-r-0 border-outline-variant bg-surface-container-low text-primary font-mono text-xs font-semibold focus:outline-none focus:border-secondary cursor-pointer"
+                title="Select Country Calling Code"
+                aria-label="Country calling code"
+              >
+                <option value="+91">🇮🇳 +91 (IN)</option>
+                <option value="+1">🇺🇸 +1 (US)</option>
+                <option value="+44">🇬🇧 +44 (UK)</option>
+              </select>
               <input
                 id="contactNumber"
                 type="tel"
                 required
                 value={contactNumber}
-                onChange={(e) => setContactNumber(e.target.value)}
-                placeholder="(555) 234-8910"
+                onChange={(e) => {
+                  if (countryCode === '+91') {
+                    setContactNumber(cleanAndFormatIndianPhone(e.target.value));
+                  } else {
+                    setContactNumber(e.target.value);
+                  }
+                }}
+                placeholder={countryCode === '+91' ? '98765 43210' : '(555) 234-8910'}
                 className="flex-1 min-w-0 block w-full h-10 px-3 rounded-none rounded-r-lg border border-outline-variant bg-white text-on-surface font-mono text-sm focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
               />
             </div>
-            <p className="text-[11px] text-on-surface-variant">Live token summons and SMS alert pings will be dispatched here.</p>
+            <p className="text-[11px] text-on-surface-variant">
+              {countryCode === '+91'
+                ? 'Indian mobile format: +91 XXXXX XXXXX (10 digits). SMS alerts & token summons sent here.'
+                : 'Live token summons and SMS alert pings will be dispatched here.'}
+            </p>
           </div>
 
           {/* 4. Health ID / MRN (Optional) */}

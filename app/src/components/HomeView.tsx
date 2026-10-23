@@ -5,12 +5,14 @@ interface HomeViewProps {
   queueState: AnyQueueState | null;
   onNavigate: (view: 'home' | 'register' | 'patient' | 'staff' | 'analytics') => void;
   onLookupToken: () => void;
+  onOpenScanner?: () => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
   queueState,
   onNavigate,
   onLookupToken,
+  onOpenScanner,
 }) => {
   const genServing = queueState?.departments?.['General Medicine']?.nowServingToken || 'G-042';
   const cardServing = queueState?.departments?.['Cardiology']?.nowServingToken || 'C-108';
@@ -31,6 +33,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {onOpenScanner && (
+              <button
+                type="button"
+                onClick={onOpenScanner}
+                className="px-2.5 py-1 bg-secondary text-white hover:bg-on-secondary-container font-mono text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                title="Open Gate Scanner Terminal"
+              >
+                <span className="material-symbols-outlined text-[15px]">qr_code_scanner</span>
+                <span>Gate Scanner</span>
+              </button>
+            )}
             <button
               onClick={() => onNavigate('staff')}
               className="text-secondary font-mono text-xs font-semibold hover:underline flex items-center gap-0.5"
@@ -103,7 +116,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
           </div>
 
-          {/* Dual CTAs */}
+          {/* Action CTAs */}
           <div className="flex flex-col gap-2 pt-1">
             <button
               onClick={() => onNavigate('register')}
@@ -112,13 +125,27 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <span className="material-symbols-outlined text-[18px]">assignment</span>
               <span>Register for OPD Visit</span>
             </button>
-            <button
-              onClick={() => onNavigate('staff')}
-              className="w-full bg-surface-container-lowest text-primary border border-primary font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 hover:bg-surface-container-low active:scale-95 transition-all text-sm"
-            >
-              <span className="material-symbols-outlined text-[18px]">badge</span>
-              <span>Staff & Receptionist Portal</span>
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              {onOpenScanner && (
+                <button
+                  type="button"
+                  onClick={onOpenScanner}
+                  className="bg-primary hover:bg-primary-container text-white font-semibold py-2.5 px-3 rounded-lg shadow-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all text-xs"
+                >
+                  <span className="material-symbols-outlined text-[16px] text-secondary-fixed">qr_code_scanner</span>
+                  <span>Scan Gate Pass</span>
+                </button>
+              )}
+              <button
+                onClick={() => onNavigate('staff')}
+                className={`bg-surface-container-lowest text-primary border border-primary font-semibold py-2.5 px-3 rounded-lg flex items-center justify-center gap-1.5 hover:bg-surface-container-low active:scale-95 transition-all text-xs ${
+                  !onOpenScanner ? 'col-span-2' : ''
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">badge</span>
+                <span>Staff Portal</span>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -162,16 +189,29 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
 
             {/* 3 */}
-            <div className="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant shadow-xs flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-surface-container text-secondary shrink-0">
-                <span className="material-symbols-outlined text-[20px]">qr_code_2</span>
+            <div className="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant shadow-xs flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-surface-container text-secondary shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">qr_code_2</span>
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-primary">Secure 30-Day QR Pass</h3>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5 leading-relaxed">
+                    One-tap fast-track gate clearance without the hassle of printing thermal paper tickets or standing at kiosks.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xs font-bold text-primary">Secure 30-Day QR Pass</h3>
-                <p className="text-[11px] text-on-surface-variant mt-0.5 leading-relaxed">
-                  One-tap fast-track gate clearance without the hassle of printing thermal paper tickets or standing at kiosks.
-                </p>
-              </div>
+              {onOpenScanner && (
+                <button
+                  type="button"
+                  onClick={onOpenScanner}
+                  className="shrink-0 px-2 py-1 bg-secondary text-white text-[11px] font-semibold rounded-lg hover:bg-on-secondary-container transition-colors flex items-center gap-1 shadow-xs self-center"
+                  title="Open Gate Scanner"
+                >
+                  <span className="material-symbols-outlined text-[14px]">qr_code_scanner</span>
+                  <span>Scan</span>
+                </button>
+              )}
             </div>
 
             {/* 4 */}
@@ -248,10 +288,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-2 py-1.5 pb-safe bg-surface-container-lowest shadow-sm max-w-md left-1/2 -translate-x-1/2 border-t border-outline-variant/40">
+      <nav className="fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-1.5 py-1.5 pb-safe bg-surface-container-lowest shadow-sm max-w-md left-1/2 -translate-x-1/2 border-t border-outline-variant/40">
         <button
           onClick={() => onNavigate('home')}
-          className="flex flex-col items-center justify-center text-secondary bg-secondary-container/20 rounded-lg px-3 py-1 font-semibold"
+          className="flex flex-col items-center justify-center text-secondary bg-secondary-container/20 rounded-lg px-2.5 py-1 font-semibold"
         >
           <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
             queue
@@ -260,21 +300,33 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </button>
         <button
           onClick={() => onNavigate('register')}
-          className="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary px-3 py-1 transition-colors"
+          className="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary px-2.5 py-1 transition-colors"
         >
           <span className="material-symbols-outlined text-xl">assignment</span>
           <span className="text-[10px] mt-0.5">Register</span>
         </button>
+        {onOpenScanner && (
+          <button
+            type="button"
+            onClick={onOpenScanner}
+            className="flex flex-col items-center justify-center text-primary px-2.5 py-1 transition-colors hover:text-secondary group cursor-pointer"
+            title="Gate Scanner Terminal (Scan QR)"
+          >
+            <span className="material-symbols-outlined text-xl font-bold group-hover:scale-110 transition-transform">qr_code_scanner</span>
+            <span className="text-[10px] mt-0.5 font-bold">Scan QR</span>
+          </button>
+        )}
         <button
           onClick={onLookupToken}
-          className="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary px-3 py-1 transition-colors"
+          className="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary px-2.5 py-1 transition-colors"
+          title="Track Patient OPD Token"
         >
-          <span className="material-symbols-outlined text-xl">qr_code_scanner</span>
+          <span className="material-symbols-outlined text-xl">manage_search</span>
           <span className="text-[10px] mt-0.5">Check Token</span>
         </button>
         <button
           onClick={() => onNavigate('staff')}
-          className="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary px-3 py-1 transition-colors"
+          className="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary px-2.5 py-1 transition-colors"
         >
           <span className="material-symbols-outlined text-xl">badge</span>
           <span className="text-[10px] mt-0.5">Staff</span>

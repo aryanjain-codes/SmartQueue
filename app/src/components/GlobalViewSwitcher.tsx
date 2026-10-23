@@ -2,7 +2,9 @@ import React from 'react';
 
 interface GlobalViewSwitcherProps {
   currentView: 'home' | 'register' | 'patient' | 'staff' | 'analytics';
+  staffRole?: 'clinical' | 'security';
   onNavigate: (view: 'home' | 'register' | 'patient' | 'staff' | 'analytics') => void;
+  onSelectStaffRole?: (role: 'clinical' | 'security') => void;
   onOpenScanner: () => void;
   patientToken?: string;
   isSyncing?: boolean;
@@ -10,11 +12,18 @@ interface GlobalViewSwitcherProps {
 
 export const GlobalViewSwitcher: React.FC<GlobalViewSwitcherProps> = ({
   currentView,
+  staffRole = 'clinical',
   onNavigate,
+  onSelectStaffRole,
   onOpenScanner,
   patientToken,
   isSyncing,
 }) => {
+  const handleSelectStaff = (role: 'clinical' | 'security') => {
+    if (onSelectStaffRole) onSelectStaffRole(role);
+    onNavigate('staff');
+  };
+
   return (
     <div className="bg-primary text-white text-xs px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 border-b border-primary-container shadow-xs z-50">
       {/* Brand & Sync indicator */}
@@ -62,17 +71,33 @@ export const GlobalViewSwitcher: React.FC<GlobalViewSwitcherProps> = ({
               : 'bg-primary-container text-primary-fixed hover:bg-white/10'
           }`}
         >
-          Patient Live ({patientToken || 'MED-042'})
+          {patientToken ? `Patient Live (${patientToken})` : 'Patient Live View'}
         </button>
+        {/* Clinical Staff */}
         <button
-          onClick={() => onNavigate('staff')}
-          className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${
-            currentView === 'staff'
+          onClick={() => handleSelectStaff('clinical')}
+          className={`px-2.5 py-1 rounded text-xs font-semibold transition-all flex items-center gap-1 ${
+            currentView === 'staff' && staffRole === 'clinical'
               ? 'bg-secondary text-white shadow-xs'
               : 'bg-primary-container text-primary-fixed hover:bg-white/10'
           }`}
+          title="Clinical Staff Workstation (Physician EHR & Call Next)"
         >
-          Staff Workstation
+          <span className="material-symbols-outlined text-[13px]">stethoscope</span>
+          <span>Doctor Workstation</span>
+        </button>
+        {/* Security Staff */}
+        <button
+          onClick={() => handleSelectStaff('security')}
+          className={`px-2.5 py-1 rounded text-xs font-semibold transition-all flex items-center gap-1 ${
+            currentView === 'staff' && staffRole === 'security'
+              ? 'bg-amber-600 text-white shadow-xs'
+              : 'bg-primary-container text-primary-fixed hover:bg-white/10'
+          }`}
+          title="Security Gate Terminal (Pass Validator & Least-Privilege Logs)"
+        >
+          <span className="material-symbols-outlined text-[13px]">shield</span>
+          <span>Gate Security</span>
         </button>
         <button
           onClick={() => onNavigate('analytics')}
@@ -85,12 +110,13 @@ export const GlobalViewSwitcher: React.FC<GlobalViewSwitcherProps> = ({
           Analytics
         </button>
         <button
+          type="button"
           onClick={onOpenScanner}
-          className="px-2 py-1 rounded text-xs font-semibold bg-primary-container text-secondary-fixed hover:bg-white/10 flex items-center gap-1"
-          title="Open Gate Scanner Terminal"
+          className="px-2.5 py-1 rounded text-xs font-semibold bg-secondary-fixed text-primary hover:bg-secondary-fixed-dim transition-all flex items-center gap-1 shadow-xs cursor-pointer"
+          title="Open Gate Scanner Terminal Modal"
         >
-          <span className="material-symbols-outlined text-[14px]">qr_code_scanner</span>
-          <span className="hidden sm:inline">Gate Scanner</span>
+          <span className="material-symbols-outlined text-[15px]">qr_code_scanner</span>
+          <span className="font-bold">Gate Scanner</span>
         </button>
       </div>
     </div>

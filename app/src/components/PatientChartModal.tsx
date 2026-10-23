@@ -5,12 +5,14 @@ interface PatientChartModalProps {
   patient: PatientRecord;
   onClose: () => void;
   onCompleteConsultation?: () => void;
+  onOpenPass?: (patient: PatientRecord) => void;
 }
 
 export const PatientChartModal: React.FC<PatientChartModalProps> = ({
   patient,
   onClose,
   onCompleteConsultation,
+  onOpenPass,
 }) => {
   const [notes, setNotes] = useState(
     'Patient presents alert, oriented x 3. Vital signs stable. Neurological exam grossly intact. Recommending dark room rest, IV fluids, and Sumatriptan response monitoring.'
@@ -55,10 +57,11 @@ export const PatientChartModal: React.FC<PatientChartModalProps> = ({
               <div className="flex items-start gap-3.5">
                 <div className="w-14 h-14 rounded-lg bg-surface-container-high border border-outline-variant flex flex-col items-center justify-center shrink-0 text-primary">
                   <span className="font-mono text-lg font-bold">
-                    {patient.fullName
+                    {(patient.fullName || 'Patient')
                       .split(' ')
                       .map((n) => n[0])
-                      .join('')}
+                      .join('')
+                      .slice(0, 2) || 'PT'}
                   </span>
                   <span className="text-[9px] font-mono text-on-surface-variant">PT-{patient.token.slice(-3)}</span>
                 </div>
@@ -83,10 +86,20 @@ export const PatientChartModal: React.FC<PatientChartModalProps> = ({
                     <span>•</span>
                     <span><strong>Attending:</strong> {patient.doctor}</span>
                   </div>
-                  <div className="mt-2 flex items-center gap-2 text-xs">
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                     <span className="px-2 py-0.5 bg-surface-container-low rounded border border-outline-variant text-[11px] text-primary">
-                      Pass Status: <strong className="text-secondary font-mono">Active ({patient.passId})</strong>
+                      Pass Status: <strong className="text-secondary font-mono">{patient.passStatus || 'Active'} ({patient.passId})</strong>
                     </span>
+                    {onOpenPass && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenPass(patient)}
+                        className="px-2 py-0.5 bg-secondary text-white rounded text-[11px] font-semibold hover:bg-on-secondary-container transition-all flex items-center gap-1 shadow-xs"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">qr_code_2</span>
+                        <span>Open QR Pass</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

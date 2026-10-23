@@ -217,6 +217,30 @@ export async function verifyPass(
 }
 
 /**
+ * Update a patient's pass status (active/expired/revoked) on the server.
+ * Requires Security or Clinical staff credentials.
+ */
+export async function updatePassStatus(
+  code: string,
+  status: 'active' | 'expired' | 'revoked',
+  token = DEFAULT_SECURITY_TOKEN
+): Promise<{ success: boolean; patient: PatientQueueView | null }> {
+  const res = await fetch(`${BASE_URL}/scanner/pass-status`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ code, status }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || errorData.error || 'Failed to update pass status');
+  }
+  return res.json();
+}
+
+/**
  * Gate Scan Audit Logs (Security or Clinical staff credentials)
  */
 export async function fetchScanLogs(token = DEFAULT_SECURITY_TOKEN): Promise<GateScanLogEntry[]> {

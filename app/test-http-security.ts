@@ -20,6 +20,9 @@ async function runHttpSecurityTests() {
     }
   }
 
+  // 0. Reset demo baseline to ensure clean test state and clear rate-limit windows
+  await fetch(`${BASE}/reset-demo`, { method: 'POST' }).catch(() => {});
+
   // 1. Health check
   const healthRes = await fetch(`${BASE}/health`);
   assert(healthRes.status === 200, 'Health endpoint responds 200 OK');
@@ -187,6 +190,9 @@ async function runHttpSecurityTests() {
     }
   }
   assert(hitRateLimit, 'Scanner rate limiter active: returns 429 Too Many Requests when threshold exceeded');
+
+  // Reset rate limit map after threshold test so subsequent test suites are not blocked
+  await fetch(`${BASE}/reset-demo`, { method: 'POST' }).catch(() => {});
 
   console.log('\n===========================================================');
   console.log(`HTTP TESTS EXECUTED: ${passed + failed}`);

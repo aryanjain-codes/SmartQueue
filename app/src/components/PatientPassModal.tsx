@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
 import { PatientRecord } from '../types/queue';
+import { updatePassStatus } from '../services/api';
 
 interface PatientPassModalProps {
   patient: PatientRecord;
@@ -13,17 +14,16 @@ export const PatientPassModal: React.FC<PatientPassModalProps> = ({
   onClose,
   onOpenScanner,
 }) => {
-  const [passState, setPassState] = useState<'active' | 'expired' | 'revoked'>('active');
+  const [passState, setPassState] = useState<'active' | 'expired' | 'revoked'>(
+    patient.passStatus || 'active'
+  );
   const [walletSaved, setWalletSaved] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [statusFeedback, setStatusFeedback] = useState<string | null>(null);
 
-  // Determine active token code based on test selection
-  const currentPassToken =
-    passState === 'active'
-      ? patient.passId
-      : passState === 'expired'
-      ? 'SQ-PASS-EXPIRED-TEST-FIXTURE-B'
-      : 'SQ-PASS-REVOKED-TEST-FIXTURE-B';
+  // The pass token is ALWAYS this patient's unique, persistent 128-bit pass ID
+  const currentPassToken = patient.passId;
 
   // Generate dynamic QR code encoding ONLY the opaque pass token
   useEffect(() => {
@@ -49,6 +49,21 @@ export const PatientPassModal: React.FC<PatientPassModalProps> = ({
       active = false;
     };
   }, [currentPassToken]);
+
+  const handleStatusChange = async (newState: 'active' | 'expired' | 'revoked') => {
+    setPassState(newState);
+    setStatusUpdating(true);
+    setStatusFeedback(null);
+    try {
+      await updatePassStatus(patient.passId, newState);
+      setStatusFeedback(`Server updated status: ${newState.toUpperCase()}`);
+      setTimeout(() => setStatusFeedback(null), 3500);
+    } catch (err: any) {
+      console.warn('Could not sync pass status to server:', err);
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
 
   const expiryDate = new Date(
     passState === 'expired'
@@ -119,7 +134,8 @@ export const PatientPassModal: React.FC<PatientPassModalProps> = ({
             <div className="grid grid-cols-3 gap-1.5">
               <button
                 type="button"
-                onClick={() => setPassState('active')}
+                disabled={statusUpdating}
+                onClick={() => handleStatusChange('active')}
                 className={`py-1.5 px-1 rounded-lg text-center transition-all ${
                   passState === 'active'
                     ? 'border-2 border-secondary bg-secondary-container/20 text-secondary font-semibold'
@@ -134,7 +150,8 @@ export const PatientPassModal: React.FC<PatientPassModalProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setPassState('expired')}
+                disabled={statusUpdating}
+                onClick={() => handleStatusChange('expired')}
                 className={`py-1.5 px-1 rounded-lg text-center transition-all ${
                   passState === 'expired'
                     ? 'border-2 border-amber-600 bg-amber-50 text-amber-800 font-semibold'
@@ -146,7 +163,8 @@ export const PatientPassModal: React.FC<PatientPassModalProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setPassState('revoked')}
+                disabled={statusUpdating}
+                onClick={() => handleStatusChange('revoked')}
                 className={`py-1.5 px-1 rounded-lg text-center transition-all ${
                   passState === 'revoked'
                     ? 'border-2 border-error bg-red-50 text-error font-semibold'
@@ -157,6 +175,11 @@ export const PatientPassModal: React.FC<PatientPassModalProps> = ({
                 <span className="text-[9px] block text-error/80">Flagged Gate</span>
               </button>
             </div>
+            {statusFeedback && (
+              <div className="mt-1.5 text-[10px] text-center font-mono text-secondary animate-fadeIn">
+                ✓ {statusFeedback}
+              </div>
+            )}
           </section>
 
           {/* Digital Badge Card */}

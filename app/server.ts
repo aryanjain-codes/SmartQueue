@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
@@ -8,12 +9,12 @@ import { OPDDepartment, RegistrationPayload, StaffRole } from './src/types/queue
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Staff Auth Constants
-export const SECURITY_AUTH_TOKEN = 'sec-gate-token-402';
-export const CLINICAL_AUTH_TOKEN = 'cln-med-token-104';
+// Staff Auth Constants - Configurable via environment variables (with secure demo defaults)
+export const SECURITY_AUTH_TOKEN = process.env.SECURITY_AUTH_TOKEN || 'sec-gate-token-402';
+export const CLINICAL_AUTH_TOKEN = process.env.CLINICAL_AUTH_TOKEN || 'cln-med-token-104';
 
 interface AuthContext {
   role: StaffRole;
@@ -163,9 +164,26 @@ async function startServer() {
       if (isNaN(ageNum) || ageNum < 0 || ageNum > 125) {
         return res.status(400).json({ error: 'Valid age between 0 and 125 is required' });
       }
-      if (!body.contactNumber || body.contactNumber.trim().length < 7) {
+
+      // Contact number validation & normalization (supporting +91 Indian mobile format)
+      const rawContact = String(body.contactNumber || '').trim();
+      const digitsOnly = rawContact.replace(/\D/g, '');
+      if (!rawContact || digitsOnly.length < 7) {
         return res.status(400).json({ error: 'Valid contact mobile number is required' });
       }
+
+      let normalizedContact = rawContact;
+      if (rawContact.startsWith('+91') || (digitsOnly.length === 12 && digitsOnly.startsWith('91'))) {
+        const localDigits = digitsOnly.startsWith('91') && digitsOnly.length === 12 ? digitsOnly.slice(2) : digitsOnly;
+        if (localDigits.length !== 10) {
+          return res.status(400).json({ error: 'Indian mobile number must be exactly 10 digits after +91' });
+        }
+        if (!/^[6-9]\d{9}$/.test(localDigits)) {
+          return res.status(400).json({ error: 'Indian mobile number must start with 6, 7, 8, or 9' });
+        }
+        normalizedContact = `+91 ${localDigits.slice(0, 5)} ${localDigits.slice(5)}`;
+      }
+
       const allowedDepts: OPDDepartment[] = ['General Medicine', 'Cardiology', 'Orthopaedics'];
       if (!allowedDepts.includes(body.department)) {
         return res.status(400).json({
@@ -179,8 +197,8 @@ async function startServer() {
       const patientView = queueDb.registerPatient({
         fullName: body.fullName.trim(),
         age: ageNum,
-        gender: body.gender || 'Not Specified',
-        contactNumber: body.contactNumber.trim(),
+        gender: body.gender || 'Male',
+        contactNumber: normalizedContact,
         mrn: body.mrn?.trim(),
         department: body.department,
         chiefComplaint: body.chiefComplaint.trim(),
@@ -359,14 +377,69 @@ async function startServer() {
     }
   });
 
+  // POST /api/scanner/pass-status: Update pass status (active/expired/revoked) - Security or Clinical role
+  app.post('/api/scanner/pass-status', (req: Request, res: Response) => {
+    try {
+      const auth = authenticateStaff(req);
+      if (auth.role !== 'security' && auth.role !== 'clinical') {
+        return res.status(401).json({
+          error: 'Unauthorized',
+          message: 'Security or Clinical staff authorization required to update pass status.',
+        });
+      }
+
+      const { code, status } = req.body;
+      if (!code || !['active', 'expired', 'revoked'].includes(status)) {
+        return res.status(400).json({
+          error: 'Bad Request',
+          message: 'Valid code and status (active, expired, revoked) are required.',
+        });
+      }
+
+      const result = queueDb.updatePassStatus(code, status, auth.role);
+      if (!result.success || !result.patient) {
+        return res.status(404).json({ error: 'Pass or patient not found', code });
+      }
+
+      res.json(result);
+    } catch (err: any) {
+      console.error('Error updating pass status:', err);
+      res.status(500).json({ error: 'Failed to update pass status', message: err.message });
+    }
+  });
+
   // POST /api/reset-demo: Reset demo data to initial state
   app.post('/api/reset-demo', (_req: Request, res: Response) => {
     try {
       const state = queueDb.resetDemo();
+      scanRateLimitMap.clear();
       res.json({ success: true, state });
     } catch (err: any) {
       console.error('Error resetting demo:', err);
       res.status(500).json({ error: 'Reset failed', message: err.message });
+    }
+  });
+
+  // POST /api/backup: Create timestamped SQLite database backup (Staff authorized)
+  app.post('/api/backup', (req: Request, res: Response) => {
+    try {
+      const auth = authenticateStaff(req);
+      if (auth.role !== 'clinical' && auth.role !== 'security') {
+        return res.status(401).json({
+          error: 'Unauthorized',
+          message: 'Staff authorization required to trigger database backup.',
+        });
+      }
+      const backupPath = queueDb.backupDatabase();
+      res.json({
+        success: true,
+        message: 'Database backup initiated',
+        backupPath: path.basename(backupPath),
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err: any) {
+      console.error('Backup error:', err);
+      res.status(500).json({ error: 'Backup failed', message: err.message });
     }
   });
 
