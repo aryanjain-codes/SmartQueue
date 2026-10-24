@@ -364,34 +364,77 @@ export function insertPatientRecord(record: PatientRecord): void {
 }
 
 /**
- * Update queue entry status (e.g. SERVING, COMPLETED, HOLD_LAB).
+ * Update queue entry status (e.g. SERVING, COMPLETED, HOLD_LAB, CANCELLED) or reassignment.
  */
 export function updateQueueEntry(
   token: string,
   updates: {
-    status: QueueStatus;
+    status?: QueueStatus;
     calledAt?: string;
     completedAt?: string;
     location?: string;
+    department?: OPDDepartment;
+    room?: string;
+    doctor?: string;
   }
 ): boolean {
   const db = getDb();
   const stmt = db.prepare(`
     UPDATE queue_entries
-    SET status = ?,
+    SET status = COALESCE(?, status),
         called_at = COALESCE(?, called_at),
         completed_at = COALESCE(?, completed_at),
-        location = COALESCE(?, location)
-    WHERE token = ?
+        location = COALESCE(?, location),
+        department = COALESCE(?, department),
+        room = COALESCE(?, room),
+        doctor = COALESCE(?, doctor)
+    WHERE UPPER(token) = UPPER(?)
   `);
   const result = stmt.run(
-    updates.status,
+    updates.status || null,
     updates.calledAt || null,
     updates.completedAt || null,
     updates.location || null,
-    token
+    updates.department || null,
+    updates.room || null,
+    updates.doctor || null,
+    token.trim()
   );
   return result.changes > 0;
+}
+
+/**
+ * Retrieve historical completed consultation durations (in minutes) for a department.
+ */
+export function getCompletedConsultationDurations(department: OPDDepartment): number[] {
+  try {
+    const db = getDb();
+    const rows = db.prepare(`
+      SELECT called_at, completed_at
+      FROM queue_entries
+      WHERE department = ?
+        AND status = 'COMPLETED'
+        AND called_at IS NOT NULL
+        AND completed_at IS NOT NULL
+      ORDER BY completed_at DESC
+      LIMIT 20
+    `).all(department) as { called_at: string; completed_at: string }[];
+
+    const durations: number[] = [];
+    for (const r of rows) {
+      const start = new Date(r.called_at).getTime();
+      const end = new Date(r.completed_at).getTime();
+      const diffMinutes = (end - start) / (60 * 1000);
+      // Only include valid durations between 0.5 mins and 120 mins
+      if (!isNaN(diffMinutes) && diffMinutes >= 0.5 && diffMinutes <= 120) {
+        durations.push(Math.round(diffMinutes * 10) / 10);
+      }
+    }
+    return durations;
+  } catch (err) {
+    console.warn(`[SQLite] Error fetching consultation durations for ${department}:`, err);
+    return [];
+  }
 }
 
 /**

@@ -2,7 +2,7 @@ export type OPDDepartment = 'General Medicine' | 'Cardiology' | 'Orthopaedics';
 
 export type TriageSeverity = 'Routine' | 'Urgent Priority' | 'Senior Priority' | 'Pediatric Fast-Track';
 
-export type QueueStatus = 'WAITING' | 'SERVING' | 'COMPLETED' | 'HOLD_LAB';
+export type QueueStatus = 'WAITING' | 'SERVING' | 'COMPLETED' | 'HOLD_LAB' | 'CANCELLED' | 'ABSENT';
 
 export interface PatientRecord {
   id: string; // e.g. "SJH-2025-8841"
@@ -27,13 +27,21 @@ export interface PatientRecord {
   calledAt?: string; // ISO
   completedAt?: string; // ISO
   notes?: string;
+  estimatedWaitMinutes?: number | null;
+  totalAhead?: number;
+  position?: number;
+  etaUnavailable?: boolean;
+  etaReason?: string;
 }
 
 export interface PatientQueueView extends PatientRecord {
   position: number; // 1-based index among waiting patients in their OPD
   totalAhead: number;
   nowServingToken: string | null;
-  estimatedWaitMinutes: number;
+  estimatedWaitMinutes: number | null;
+  etaUnavailable?: boolean;
+  etaReason?: string;
+  lastUpdated?: string;
 }
 
 export interface DepartmentSummary {
@@ -43,6 +51,7 @@ export interface DepartmentSummary {
   suite: string;
   doctor: string;
   active: boolean;
+  doctorAvailable?: boolean;
   activeDesks: number;
   nowServingToken: string | null;
   nowServingPatient: PatientRecord | null;
@@ -50,6 +59,8 @@ export interface DepartmentSummary {
   totalServedToday: number;
   averageWaitMinutes: number;
   currentConsultationSeconds?: number;
+  isHistoricalAvg?: boolean;
+  delayReason?: string | null;
 }
 
 export interface SmartQueueState {
@@ -103,6 +114,9 @@ export interface PublicQueuePatientDTO {
   location: string;
   registeredAt: string;
   position?: number;
+  totalAhead?: number;
+  estimatedWaitMinutes?: number | null;
+  etaUnavailable?: boolean;
 }
 
 /**

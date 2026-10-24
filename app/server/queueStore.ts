@@ -32,6 +32,7 @@ import {
   migrateFromJsonIfEmpty,
   resetDatabase,
   backupDatabase,
+  getCompletedConsultationDurations,
   DATA_DIR,
   DB_PATH,
 } from './sqliteDb';
@@ -77,6 +78,26 @@ const DEPARTMENT_CONFIGS: Record<
     avgMinutes: 5.0,
   },
 };
+
+/**
+ * Priority-aware comparator for OPD queueing:
+ * - Urgent Priority (emergency triage) is prioritized first (weight 100).
+ * - Senior Priority & Pediatric Fast-Track are prioritized above Routine (weight 50).
+ * - Routine is standard FIFO (weight 10).
+ * - Between patients with identical triage severity, earlier registration timestamp wins.
+ */
+export function compareQueuePriority(a: PatientRecord, b: PatientRecord): number {
+  const getWeight = (sev: TriageSeverity) => {
+    if (sev === 'Urgent Priority') return 100;
+    if (sev === 'Senior Priority') return 50;
+    if (sev === 'Pediatric Fast-Track') return 50;
+    return 10;
+  };
+  const wA = getWeight(a.triageSeverity);
+  const wB = getWeight(b.triageSeverity);
+  if (wA !== wB) return wB - wA; // higher priority first
+  return new Date(a.registeredAt).getTime() - new Date(b.registeredAt).getTime(); // earlier registration first
+}
 
 export function maskFullName(fullName: string): string {
   const parts = fullName.trim().split(/\s+/);
@@ -410,6 +431,12 @@ export function generateInitialSeed(): PatientRecord[] {
 class QueueDatabase {
   private patients: PatientRecord[] = [];
   private scanLogs: GateScanLogEntry[] = [];
+  private doctorAvailability: Record<OPDDepartment, boolean> = {
+    'General Medicine': true,
+    Cardiology: true,
+    Orthopaedics: true,
+  };
+  private activeDesksOverride: Partial<Record<OPDDepartment, number>> = {};
 
   constructor() {
     // 1. Initialize SQLite schema and migrate from existing JSON if SQLite empty
@@ -448,12 +475,204 @@ class QueueDatabase {
 
   public resetDemo(): PublicQueueStateDTO {
     resetDatabase(generateInitialSeed());
+    this.doctorAvailability = {
+      'General Medicine': true,
+      Cardiology: true,
+      Orthopaedics: true,
+    };
+    this.activeDesksOverride = {};
     this.syncFromDb();
     return this.getPublicState();
   }
 
   public backupDatabase(): string {
     return backupDatabase();
+  }
+
+  /**
+   * Calculate dynamic average consultation duration using historical SQLite data.
+   * If < 2 completed records are available, fall back to configured baseline duration.
+   * Assumption: Configured fallback duration represents established hospital clinical baseline.
+   */
+  public getDepartmentConsultationDuration(dept: OPDDepartment): { avgMinutes: number; isHistorical: boolean } {
+    const durations = getCompletedConsultationDurations(dept);
+    if (durations.length >= 2) {
+      const sum = durations.reduce((a, b) => a + b, 0);
+      const avg = Math.round((sum / durations.length) * 10) / 10;
+      return { avgMinutes: Math.max(1, avg), isHistorical: true };
+    }
+    return { avgMinutes: DEPARTMENT_CONFIGS[dept].avgMinutes, isHistorical: false };
+  }
+
+  /**
+   * Toggle attending physician or counter availability for a department.
+   */
+  public setDoctorAvailability(
+    department: OPDDepartment,
+    available: boolean,
+    activeDesks?: number,
+    role?: StaffRole
+  ): { success: boolean; department: OPDDepartment; available: boolean; activeDesks: number } {
+    if (role && role !== 'clinical' && role !== 'security') {
+      throw new Error('Access denied: Staff authorization required to change doctor availability.');
+    }
+    this.doctorAvailability[department] = available;
+    if (typeof activeDesks === 'number' && activeDesks >= 0) {
+      this.activeDesksOverride[department] = activeDesks;
+    }
+    return {
+      success: true,
+      department,
+      available,
+      activeDesks: this.activeDesksOverride[department] ?? DEPARTMENT_CONFIGS[department].activeDesks,
+    };
+  }
+
+  /**
+   * Mark a waiting patient as cancelled or absent.
+   * Excludes them immediately from queue sequence and triggers live ETA recalculation.
+   */
+  public cancelPatientQueue(
+    tokenOrId: string,
+    reason = 'Patient Cancelled / Absent',
+    role?: StaffRole
+  ): { success: boolean; patient: PatientQueueView | null } {
+    if (role && role !== 'clinical' && role !== 'security') {
+      throw new Error('Access denied: Staff authorization required to cancel queue ticket.');
+    }
+
+    const query = tokenOrId.trim().toUpperCase();
+    const patient = findPatientByQuery(query) || this.patients.find(
+      (p) => p.token.toUpperCase() === query || p.passId.toUpperCase() === query || p.id.toUpperCase() === query
+    );
+
+    if (!patient) return { success: false, patient: null };
+
+    const updated = updateQueueEntry(patient.token, {
+      status: 'CANCELLED',
+      location: reason,
+    });
+
+    if (updated) {
+      this.syncFromDb();
+      return { success: true, patient: this.getPatientSelfView(patient.token) };
+    }
+    return { success: false, patient: null };
+  }
+
+  /**
+   * Authorized queue reassignment to another OPD department.
+   */
+  public reassignDepartment(
+    tokenOrId: string,
+    targetDept: OPDDepartment,
+    role?: StaffRole
+  ): { success: boolean; patient: PatientQueueView | null } {
+    if (role !== 'clinical') {
+      throw new Error('Access denied: Clinical staff authorization required for queue reassignment.');
+    }
+
+    const query = tokenOrId.trim().toUpperCase();
+    const patient = findPatientByQuery(query) || this.patients.find(
+      (p) => p.token.toUpperCase() === query || p.passId.toUpperCase() === query || p.id.toUpperCase() === query
+    );
+
+    if (!patient) return { success: false, patient: null };
+    if (!DEPARTMENT_CONFIGS[targetDept]) {
+      throw new Error(`Invalid target department: ${targetDept}`);
+    }
+
+    const targetConfig = DEPARTMENT_CONFIGS[targetDept];
+    const updated = updateQueueEntry(patient.token, {
+      department: targetDept,
+      room: targetConfig.room,
+      doctor: targetConfig.doctor,
+      location: `Waiting Hall ${targetDept === 'Cardiology' ? 'A' : targetDept === 'Orthopaedics' ? 'C' : 'B'}`,
+    });
+
+    if (updated) {
+      this.syncFromDb();
+      return { success: true, patient: this.getPatientSelfView(patient.token) };
+    }
+    return { success: false, patient: null };
+  }
+
+  /**
+   * Deterministic, priority-aware dynamic ETA calculator for a department.
+   */
+  public calculateDepartmentETAs(department: OPDDepartment): Map<string, {
+    position: number;
+    totalAhead: number;
+    estimatedWaitMinutes: number | null;
+    etaUnavailable: boolean;
+    etaReason?: string;
+  }> {
+    const config = DEPARTMENT_CONFIGS[department];
+    const isDocAvailable = this.doctorAvailability[department] ?? true;
+    const activeDesks = this.activeDesksOverride[department] ?? config.activeDesks;
+    const { avgMinutes } = this.getDepartmentConsultationDuration(department);
+
+    const deptPatients = this.patients.filter((p) => p.department === department);
+    const serving = deptPatients.find((p) => p.status === 'SERVING') || null;
+
+    // Filter only eligible waiting patients (not completed, not cancelled, not expired, not revoked)
+    const eligibleWaiting = deptPatients
+      .filter((p) => p.status === 'WAITING' && p.passStatus !== 'expired' && p.passStatus !== 'revoked')
+      .sort(compareQueuePriority);
+
+    const resultMap = new Map<string, {
+      position: number;
+      totalAhead: number;
+      estimatedWaitMinutes: number | null;
+      etaUnavailable: boolean;
+      etaReason?: string;
+    }>();
+
+    // Elapsed & remaining time of current consultation (avoids double counting)
+    let remainingServingMinutes = 0;
+    if (serving && serving.calledAt) {
+      const elapsedMinutes = (Date.now() - new Date(serving.calledAt).getTime()) / (60 * 1000);
+      remainingServingMinutes = Math.max(0.5, avgMinutes - elapsedMinutes);
+    }
+
+    const effectiveDesks = Math.max(1, activeDesks);
+
+    eligibleWaiting.forEach((patient, index) => {
+      const totalAhead = index;
+      const position = index + 1;
+
+      if (!isDocAvailable || activeDesks <= 0) {
+        resultMap.set(patient.id, {
+          position,
+          totalAhead,
+          estimatedWaitMinutes: null,
+          etaUnavailable: true,
+          etaReason: 'Attending Physician Unavailable / Desk Inactive',
+        });
+        return;
+      }
+
+      let estWait: number;
+      if (totalAhead === 0) {
+        // First in line: wait time depends on current serving desk completion or minimal triage prep buffer (2 mins)
+        estWait = serving
+          ? Math.max(2, Math.ceil(remainingServingMinutes / effectiveDesks))
+          : Math.max(2, Math.round(avgMinutes / (effectiveDesks * 2)));
+      } else {
+        // Subsequent patients: remaining time of serving desk + durations of patients ahead
+        const workAheadMinutes = remainingServingMinutes + (totalAhead * avgMinutes);
+        estWait = Math.max(2, Math.ceil(workAheadMinutes / effectiveDesks));
+      }
+
+      resultMap.set(patient.id, {
+        position,
+        totalAhead,
+        estimatedWaitMinutes: Math.max(0, estWait),
+        etaUnavailable: false,
+      });
+    });
+
+    return resultMap;
   }
 
   /**
@@ -469,11 +688,19 @@ class QueueDatabase {
     let totalWaitTimeAccum = 0;
     let waitTimeCount = 0;
 
+    const allEtas = new Map<string, {
+      position: number;
+      totalAhead: number;
+      estimatedWaitMinutes: number | null;
+      etaUnavailable: boolean;
+      etaReason?: string;
+    }>();
+
     for (const dept of deptKeys) {
       const config = DEPARTMENT_CONFIGS[dept];
       const deptPatients = this.patients.filter((p) => p.department === dept);
       const serving = deptPatients.find((p) => p.status === 'SERVING') || null;
-      const waiting = deptPatients.filter((p) => p.status === 'WAITING');
+      const waiting = deptPatients.filter((p) => p.status === 'WAITING' && p.passStatus !== 'expired' && p.passStatus !== 'revoked');
       const served = deptPatients.filter((p) => p.status === 'COMPLETED');
       const lab = deptPatients.filter((p) => p.status === 'HOLD_LAB');
 
@@ -481,7 +708,23 @@ class QueueDatabase {
       totalServed += served.length;
       totalLab += lab.length;
 
-      const deptWaitMins = Math.max(3, Math.round(waiting.length * (config.avgMinutes / config.activeDesks)));
+      const deptEtas = this.calculateDepartmentETAs(dept);
+      deptEtas.forEach((v, k) => allEtas.set(k, v));
+
+      const { avgMinutes, isHistorical } = this.getDepartmentConsultationDuration(dept);
+      const isDocAvailable = this.doctorAvailability[dept] ?? true;
+      const activeDesks = this.activeDesksOverride[dept] ?? config.activeDesks;
+
+      let deptWaitMins = 0;
+      if (!isDocAvailable || activeDesks <= 0) {
+        deptWaitMins = 0;
+      } else if (waiting.length > 0) {
+        const lastPatientEta = deptEtas.get(waiting[waiting.length - 1].id);
+        deptWaitMins = lastPatientEta && lastPatientEta.estimatedWaitMinutes !== null
+          ? lastPatientEta.estimatedWaitMinutes
+          : Math.max(1, Math.ceil((waiting.length * avgMinutes) / Math.max(1, activeDesks)));
+      }
+
       totalWaitTimeAccum += deptWaitMins;
       waitTimeCount++;
 
@@ -509,31 +752,39 @@ class QueueDatabase {
         room: config.room,
         suite: config.suite,
         doctor: config.doctor,
-        active: true,
-        activeDesks: config.activeDesks,
+        active: isDocAvailable && activeDesks > 0,
+        doctorAvailable: isDocAvailable,
+        activeDesks,
         nowServingToken: serving ? serving.token : null,
         nowServingPatient: publicServing,
         waitingCount: waiting.length,
         totalServedToday: 18 + served.length,
         averageWaitMinutes: deptWaitMins,
         currentConsultationSeconds,
+        isHistoricalAvg: isHistorical,
       };
     }
 
-    const avgWait = waitTimeCount > 0 ? Math.round(totalWaitTimeAccum / waitTimeCount) : 16;
+    const avgWait = waitTimeCount > 0 ? Math.round(totalWaitTimeAccum / waitTimeCount) : 10;
 
     // Public sanitized patient list (no medical details, no contact info)
-    const sanitizedPatients: PublicQueuePatientDTO[] = this.patients.map((p, idx) => ({
-      id: `PT-**${p.token.replace(/\D/g, '').slice(-3) || '000'}`,
-      token: p.token,
-      department: p.department,
-      room: p.room,
-      status: p.status,
-      triageSeverity: p.triageSeverity,
-      location: p.location,
-      registeredAt: p.registeredAt,
-      position: p.status === 'WAITING' ? idx + 1 : undefined,
-    }));
+    const sanitizedPatients: PublicQueuePatientDTO[] = this.patients.map((p) => {
+      const etaInfo = allEtas.get(p.id);
+      return {
+        id: `PT-**${p.token.replace(/\D/g, '').slice(-3) || '000'}`,
+        token: p.token,
+        department: p.department,
+        room: p.room,
+        status: p.status,
+        triageSeverity: p.triageSeverity,
+        location: p.location,
+        registeredAt: p.registeredAt,
+        position: p.status === 'WAITING' ? (etaInfo ? etaInfo.position : undefined) : undefined,
+        totalAhead: p.status === 'WAITING' ? (etaInfo ? etaInfo.totalAhead : undefined) : undefined,
+        estimatedWaitMinutes: p.status === 'WAITING' ? (etaInfo ? etaInfo.estimatedWaitMinutes : null) : (p.status === 'SERVING' || p.status === 'COMPLETED' ? 0 : null),
+        etaUnavailable: etaInfo ? etaInfo.etaUnavailable : undefined,
+      };
+    });
 
     return {
       patients: sanitizedPatients,
@@ -559,8 +810,36 @@ class QueueDatabase {
     }
 
     const publicState = this.getPublicState();
+    const deptKeys: OPDDepartment[] = ['General Medicine', 'Cardiology', 'Orthopaedics'];
+    const allEtas = new Map<string, {
+      position: number;
+      totalAhead: number;
+      estimatedWaitMinutes: number | null;
+      etaUnavailable: boolean;
+      etaReason?: string;
+    }>();
+
+    for (const dept of deptKeys) {
+      const deptEtas = this.calculateDepartmentETAs(dept);
+      deptEtas.forEach((v, k) => allEtas.set(k, v));
+    }
+
+    const clinicalPatients: PatientRecord[] = this.patients.map((p) => {
+      const eta = allEtas.get(p.id);
+      return {
+        ...p,
+        position: p.status === 'WAITING' ? eta?.position : (p.status === 'SERVING' ? 0 : undefined),
+        totalAhead: p.status === 'WAITING' ? eta?.totalAhead : 0,
+        estimatedWaitMinutes: p.status === 'WAITING'
+          ? (eta ? eta.estimatedWaitMinutes : null)
+          : (p.status === 'SERVING' || p.status === 'COMPLETED' ? 0 : null),
+        etaUnavailable: eta ? eta.etaUnavailable : false,
+        etaReason: eta ? eta.etaReason : undefined,
+      };
+    });
+
     return {
-      patients: this.patients, // Full PatientRecord with clinical notes, allergies, complaints
+      patients: clinicalPatients,
       departments: publicState.departments,
       lastUpdated: publicState.lastUpdated,
       systemMetrics: publicState.systemMetrics,
@@ -583,20 +862,57 @@ class QueueDatabase {
 
     if (!patient) return null;
 
-    const deptConfig = DEPARTMENT_CONFIGS[patient.department];
     const deptPatients = this.patients.filter((p) => p.department === patient.department);
     const serving = deptPatients.find((p) => p.status === 'SERVING') || null;
-    const waitingPatients = deptPatients.filter((p) => p.status === 'WAITING');
 
     let position = 0;
     let totalAhead = 0;
-    let estimatedWaitMinutes = 0;
+    let estimatedWaitMinutes: number | null = 0;
+    let etaUnavailable = false;
+    let etaReason: string | undefined = undefined;
 
-    if (patient.status === 'WAITING') {
-      const idx = waitingPatients.findIndex((p) => p.id === patient.id);
-      position = idx >= 0 ? idx + 1 : 1;
-      totalAhead = idx >= 0 ? idx : 0;
-      estimatedWaitMinutes = Math.max(2, Math.round(position * (deptConfig.avgMinutes / deptConfig.activeDesks)));
+    if (patient.status === 'SERVING') {
+      position = 0;
+      totalAhead = 0;
+      estimatedWaitMinutes = 0;
+      etaUnavailable = false;
+    } else if (patient.status === 'COMPLETED') {
+      position = 0;
+      totalAhead = 0;
+      estimatedWaitMinutes = 0;
+      etaUnavailable = false;
+    } else if (patient.status === 'CANCELLED' || patient.status === 'ABSENT') {
+      position = 0;
+      totalAhead = 0;
+      estimatedWaitMinutes = null;
+      etaUnavailable = true;
+      etaReason = 'Queue Entry Cancelled or Marked Absent';
+    } else if (patient.passStatus === 'expired' || patient.passStatus === 'revoked') {
+      position = 0;
+      totalAhead = 0;
+      estimatedWaitMinutes = null;
+      etaUnavailable = true;
+      etaReason = `Patient Pass ${patient.passStatus?.toUpperCase()}`;
+    } else if (patient.status === 'HOLD_LAB') {
+      position = 0;
+      totalAhead = 0;
+      estimatedWaitMinutes = null;
+      etaUnavailable = true;
+      etaReason = 'Awaiting Diagnostic Lab / X-Ray Clearance';
+    } else if (patient.status === 'WAITING') {
+      const deptEtas = this.calculateDepartmentETAs(patient.department);
+      const myEta = deptEtas.get(patient.id);
+      if (myEta) {
+        position = myEta.position;
+        totalAhead = myEta.totalAhead;
+        estimatedWaitMinutes = myEta.estimatedWaitMinutes;
+        etaUnavailable = myEta.etaUnavailable;
+        etaReason = myEta.etaReason;
+      } else {
+        position = 1;
+        totalAhead = 0;
+        estimatedWaitMinutes = 0;
+      }
     }
 
     return {
@@ -605,6 +921,9 @@ class QueueDatabase {
       totalAhead,
       nowServingToken: serving ? serving.token : null,
       estimatedWaitMinutes,
+      etaUnavailable,
+      etaReason,
+      lastUpdated: new Date().toISOString(),
     };
   }
 
@@ -725,13 +1044,10 @@ class QueueDatabase {
       });
     }
 
-    const waitingList = this.patients.filter((p) => p.department === department && p.status === 'WAITING');
-    waitingList.sort((a, b) => {
-      const aUrgent = a.triageSeverity === 'Urgent Priority' ? 1 : 0;
-      const bUrgent = b.triageSeverity === 'Urgent Priority' ? 1 : 0;
-      if (aUrgent !== bUrgent) return bUrgent - aUrgent;
-      return new Date(a.registeredAt).getTime() - new Date(b.registeredAt).getTime();
-    });
+    const waitingList = this.patients.filter(
+      (p) => p.department === department && p.status === 'WAITING' && p.passStatus !== 'expired' && p.passStatus !== 'revoked'
+    );
+    waitingList.sort(compareQueuePriority);
 
     const nextPatient = waitingList[0] || null;
     if (nextPatient) {

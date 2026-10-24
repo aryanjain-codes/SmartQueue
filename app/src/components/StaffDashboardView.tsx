@@ -4,6 +4,8 @@ import {
   staffCompleteConsultation,
   staffHoldLab,
   staffCallToken,
+  staffCancelQueuePatient,
+  staffSetDoctorStatus,
   resetDemoData,
   verifyPass,
   fetchScanLogs,
@@ -288,6 +290,36 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
     }
   };
 
+  const handleCancelPatient = async (token: string) => {
+    setActionLoading(true);
+    try {
+      await staffCancelQueuePatient(token, 'Patient Absent / Cancelled by Staff');
+      setActionFeedback(`Patient Ticket ${token} marked absent/cancelled.`);
+      onRefresh();
+    } catch (err: any) {
+      console.error(err);
+      setActionFeedback(err.message || 'Failed to cancel ticket');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleToggleDoctorStatus = async () => {
+    setActionLoading(true);
+    const newAvail = !(deptData.doctorAvailable !== false && deptData.active);
+    try {
+      await staffSetDoctorStatus(selectedDept, newAvail);
+      setActionFeedback(`${selectedDept} Doctor marked ${newAvail ? 'AVAILABLE' : 'UNAVAILABLE'}.`);
+      onRefresh();
+    } catch (err: any) {
+      console.error(err);
+      setActionFeedback(err.message || 'Failed to update doctor status');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+
   return (
     <div className="h-screen w-full flex overflow-hidden font-sans text-on-surface bg-background">
       {/* LEFT SIDEBAR NAVIGATION */}
@@ -476,12 +508,13 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
 
             {/* Department Selector (When in clinical mode) */}
             {activeRole === 'clinical' && (
-              <div className="hidden sm:flex items-center gap-2 bg-surface-container-low px-2.5 py-1 rounded-lg border border-outline-variant">
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-surface-container-low px-2 sm:px-2.5 py-1 rounded-lg border border-outline-variant">
                 <span className="material-symbols-outlined text-secondary text-[16px]">meeting_room</span>
                 <select
                   value={selectedDept}
                   onChange={(e) => setSelectedDept(e.target.value as OPDDepartment)}
-                  className="bg-transparent border-none text-xs font-bold text-primary focus:outline-none cursor-pointer pr-1"
+                  className="bg-transparent border-none text-xs font-bold text-primary focus:outline-none cursor-pointer pr-1 max-w-[120px] sm:max-w-none truncate"
+                  aria-label="Select Outpatient Department"
                 >
                   <option value="General Medicine">General Medicine (Room 104)</option>
                   <option value="Cardiology">Cardiology (Room 102)</option>
@@ -973,6 +1006,21 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
                   <span className="text-[10px] font-mono bg-surface-container-highest text-primary px-2 py-0.5 rounded-full font-bold">
                     {waitingPatients.length} Waiting
                   </span>
+                  <button
+                    onClick={handleToggleDoctorStatus}
+                    disabled={actionLoading}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold flex items-center gap-1 border transition-colors ${
+                      deptData.doctorAvailable !== false && deptData.active
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                        : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
+                    }`}
+                    title="Toggle Doctor Availability (Dynamic ETA recalculation)"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">
+                      {deptData.doctorAvailable !== false && deptData.active ? 'check_circle' : 'do_not_disturb_on'}
+                    </span>
+                    <span>{deptData.doctorAvailable !== false && deptData.active ? 'Doctor Online' : 'Doctor Offline'}</span>
+                  </button>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   <span className="text-[10px] font-mono text-on-surface-variant">Auto-sync: Active</span>
@@ -1010,6 +1058,7 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
                         <th className="py-2 px-3">Patient Name</th>
                         <th className="py-2 px-3">Status</th>
                         <th className="py-2 px-3">Triage Severity</th>
+                        <th className="py-2 px-3">Est. Wait</th>
                         <th className="py-2 px-3">Location</th>
                         <th className="py-2 px-3">Room</th>
                         <th className="py-2 px-3 text-right">Actions</th>
@@ -1064,6 +1113,30 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
                                 {patient.triageSeverity}
                               </span>
                             </td>
+                            <td className="py-2.5 px-3 font-mono text-[11px]">
+                              {patient.status === 'WAITING' ? (
+                                patient.etaUnavailable ? (
+                                  <span
+                                    className="text-amber-800 font-semibold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200"
+                                    title={patient.etaReason || 'Doctor Offline'}
+                                  >
+                                    Offline
+                                  </span>
+                                ) : patient.estimatedWaitMinutes === 0 ? (
+                                  <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">
+                                    Next (~0m)
+                                  </span>
+                                ) : (
+                                  <span className="text-primary font-bold">
+                                    ~{patient.estimatedWaitMinutes}m
+                                  </span>
+                                )
+                              ) : patient.status === 'SERVING' ? (
+                                <span className="text-emerald-700 font-semibold">Active</span>
+                              ) : (
+                                <span className="text-outline">—</span>
+                              )}
+                            </td>
                             <td className="py-2.5 px-3 text-[11px] text-on-surface">
                               {patient.location}
                             </td>
@@ -1073,12 +1146,21 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
                             <td className="py-2.5 px-3 text-right">
                               <div className="inline-flex items-center gap-1">
                                 {patient.status === 'WAITING' && (
-                                  <button
-                                    onClick={() => handleCallSpecific(patient.token)}
-                                    className="px-2 py-0.5 bg-secondary text-white rounded text-[11px] font-semibold hover:bg-on-secondary-container transition-all active:scale-95"
-                                  >
-                                    Call
-                                  </button>
+                                  <>
+                                    <button
+                                      onClick={() => handleCallSpecific(patient.token)}
+                                      className="px-2 py-0.5 bg-secondary text-white rounded text-[11px] font-semibold hover:bg-on-secondary-container transition-all active:scale-95"
+                                    >
+                                      Call
+                                    </button>
+                                    <button
+                                      onClick={() => handleCancelPatient(patient.token)}
+                                      className="px-1.5 py-0.5 border border-outline-variant hover:bg-red-50 hover:text-red-700 hover:border-red-300 rounded text-[10px] text-outline transition-colors"
+                                      title="Mark Absent / Cancel Patient"
+                                    >
+                                      Absent
+                                    </button>
+                                  </>
                                 )}
                                 <button
                                   onClick={() => onViewPatientChart(patient)}

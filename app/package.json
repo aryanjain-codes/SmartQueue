@@ -18,7 +18,9 @@
     "test:indian": "tsx test-indian-registration.ts",
     "test:scanner": "tsx test-gate-scanner.ts",
     "test:auth": "tsx test-staff-auth.ts",
-    "test:all": "tsx test-smartqueue.ts && tsx test-http-security.ts && tsx test-ui-resilience.ts && tsx test-pass-registration-regression.ts && tsx test-sqlite-persistence.ts && tsx test-indian-registration.ts && tsx test-gate-scanner.ts && tsx test-staff-auth.ts"
+    "test:eta": "tsx test-eta-engine.ts",
+    "test:assistant": "tsx test-assistant.ts",
+    "test:all": "tsx test-smartqueue.ts && tsx test-http-security.ts && tsx test-ui-resilience.ts && tsx test-pass-registration-regression.ts && tsx test-sqlite-persistence.ts && tsx test-indian-registration.ts && tsx test-gate-scanner.ts && tsx test-staff-auth.ts && tsx test-eta-engine.ts && tsx test-assistant.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

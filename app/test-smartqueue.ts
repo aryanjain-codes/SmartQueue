@@ -53,7 +53,7 @@ async function runSecurityAndQueueTests() {
     'Generated 128-bit cryptographically secure pass ID (' + regResult.passId + ')'
   );
   assert(regResult.position >= 1, `Queue position calculated correctly (Position: ${regResult.position})`);
-  assert(regResult.estimatedWaitMinutes >= 2, `Estimated wait time calculated (Est: ${regResult.estimatedWaitMinutes} mins)`);
+  assert(regResult.estimatedWaitMinutes !== null && regResult.estimatedWaitMinutes >= 2, `Estimated wait time calculated (Est: ${regResult.estimatedWaitMinutes} mins)`);
 
   // Verify record written to disk
   const fileContentAfter = fs.readFileSync(dataFilePath, 'utf-8');

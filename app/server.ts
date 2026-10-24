@@ -19,6 +19,13 @@ import {
   CLINICAL_AUTH_TOKEN,
   type AuthContext,
 } from './server/auth';
+import {
+  PREDEFINED_QUESTIONS,
+  isAllowedQuestionId,
+  extractVerifiedQueueData,
+  getAssistantAnswer,
+  getQuestionById,
+} from './server/assistantService';
 
 export { SECURITY_AUTH_TOKEN, CLINICAL_AUTH_TOKEN, authenticateStaff };
 export type { AuthContext };
@@ -278,6 +285,69 @@ async function startServer() {
     }
   });
 
+  // GET /api/assistant/questions: Server-side allowlist of predefined FAQ questions
+  app.get('/api/assistant/questions', (_req: Request, res: Response) => {
+    res.json({ questions: PREDEFINED_QUESTIONS });
+  });
+
+  // POST /api/assistant/faq: SmartQueue Assistant FAQ with verified telemetry and Gemini synthesis
+  app.post('/api/assistant/faq', async (req: Request, res: Response) => {
+    try {
+      const { questionId, token, passId } = req.body || {};
+      const headerPassId = (req.headers['x-patient-pass-id'] as string) || passId;
+
+      if (!questionId || typeof questionId !== 'string') {
+        return res.status(400).json({
+          error: 'Bad Request',
+          message: 'Question identifier is required.',
+        });
+      }
+
+      // Feature 3: Server-side allowlist validation
+      if (!isAllowedQuestionId(questionId)) {
+        return res.status(400).json({
+          error: 'Bad Request',
+          message: `Unknown question identifier "${questionId}". Only predefined FAQ questions are supported.`,
+          allowedQuestions: PREDEFINED_QUESTIONS.map((q) => q.id),
+        });
+      }
+
+      const questionObj = getQuestionById(questionId);
+
+      // Feature 4: Enforce patient authorization on backend
+      // If the question is patient-specific or a patient token was provided, authenticate passId
+      if (token || questionObj?.isPatientSpecific) {
+        if (!token) {
+          return res.status(400).json({
+            error: 'Bad Request',
+            message: 'A patient token is required for patient-specific inquiries.',
+          });
+        }
+
+        const authResult = extractVerifiedQueueData(token, headerPassId);
+        if (!authResult.authorized || !authResult.data) {
+          return res.status(401).json({
+            error: 'Unauthorized',
+            message: authResult.error || 'Valid patient pass authorization required.',
+          });
+        }
+
+        const answerResponse = await getAssistantAnswer(questionId, authResult.data);
+        return res.json(answerResponse);
+      }
+
+      // For general hospital workflow inquiries without patient token
+      const answerResponse = await getAssistantAnswer(questionId, undefined);
+      return res.json(answerResponse);
+    } catch (err: any) {
+      console.error('[SmartQueue Assistant] Server error:', err);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'SmartQueue Assistant encountered an unexpected error.',
+      });
+    }
+  });
+
   // PATCH /api/staff/patient/:query/notes: Update clinical consultation notes (Clinical role required)
   app.patch('/api/staff/patient/:query/notes', (req: Request, res: Response) => {
     try {
@@ -471,6 +541,104 @@ async function startServer() {
     } catch (err: any) {
       console.error('Error calling specific token:', err);
       res.status(500).json({ error: 'Call token failed', message: err.message });
+    }
+  });
+
+  // POST /api/staff/cancel: Staff action to mark patient cancelled or absent (Clinical or Security role)
+  app.post('/api/staff/cancel', (req: Request, res: Response) => {
+    try {
+      const auth = authenticateStaff(req);
+      if (auth.role !== 'clinical' && auth.role !== 'security') {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Staff authorization required to cancel queue ticket.',
+        });
+      }
+
+      const { token, reason = 'Patient Cancelled / Absent' } = req.body;
+      if (!token) return res.status(400).json({ error: 'Token is required' });
+
+      const result = queueDb.cancelPatientQueue(token, reason, auth.role);
+      if (!result.success) {
+        return res.status(404).json({ error: 'Token not found or could not be cancelled', token });
+      }
+
+      res.json({
+        success: true,
+        patient: result.patient,
+        state: auth.role === 'clinical' ? queueDb.getClinicalState('clinical') : queueDb.getPublicState(),
+      });
+    } catch (err: any) {
+      console.error('Error cancelling queue entry:', err);
+      res.status(500).json({ error: 'Cancel failed', message: err.message });
+    }
+  });
+
+  // POST /api/staff/doctor-status: Staff action to toggle doctor availability / active desks
+  app.post('/api/staff/doctor-status', (req: Request, res: Response) => {
+    try {
+      const auth = authenticateStaff(req);
+      if (auth.role !== 'clinical' && auth.role !== 'security') {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Staff authorization required to update doctor status.',
+        });
+      }
+
+      const { department, available, activeDesks } = req.body;
+      const allowedDepts: OPDDepartment[] = ['General Medicine', 'Cardiology', 'Orthopaedics'];
+      if (!allowedDepts.includes(department)) {
+        return res.status(400).json({ error: `Invalid department: ${department}` });
+      }
+
+      const isAvail = available !== false;
+      const result = queueDb.setDoctorAvailability(department, isAvail, activeDesks, auth.role);
+
+      res.json({
+        success: true,
+        result,
+        state: auth.role === 'clinical' ? queueDb.getClinicalState('clinical') : queueDb.getPublicState(),
+      });
+    } catch (err: any) {
+      console.error('Error updating doctor status:', err);
+      res.status(500).json({ error: 'Update failed', message: err.message });
+    }
+  });
+
+  // POST /api/staff/reassign: Clinical staff action to reassign patient to another department
+  app.post('/api/staff/reassign', (req: Request, res: Response) => {
+    try {
+      const auth = authenticateStaff(req);
+      if (auth.role !== 'clinical') {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Clinical staff role required to reassign patient.',
+        });
+      }
+
+      const { token, department } = req.body;
+      if (!token || !department) {
+        return res.status(400).json({ error: 'Token and department are required' });
+      }
+
+      const allowedDepts: OPDDepartment[] = ['General Medicine', 'Cardiology', 'Orthopaedics'];
+      if (!allowedDepts.includes(department)) {
+        return res.status(400).json({ error: `Invalid target department: ${department}` });
+      }
+
+      const result = queueDb.reassignDepartment(token, department, 'clinical');
+      if (!result.success) {
+        return res.status(404).json({ error: 'Patient not found', token });
+      }
+
+      res.json({
+        success: true,
+        patient: result.patient,
+        state: queueDb.getClinicalState('clinical'),
+      });
+    } catch (err: any) {
+      console.error('Error reassigning patient:', err);
+      res.status(500).json({ error: 'Reassignment failed', message: err.message });
     }
   });
 

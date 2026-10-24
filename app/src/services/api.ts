@@ -8,6 +8,11 @@ import {
   GateClearanceDTO,
   GateScanLogEntry,
 } from '../types/queue';
+import {
+  AssistantQuestion,
+  AssistantFaqRequest,
+  AssistantFaqResponse,
+} from '../types/assistant';
 
 // Dynamically resolve API URL:
 // 1. If VITE_API_URL is configured, use it.
@@ -447,3 +452,115 @@ export async function resetDemoData(): Promise<PublicQueueStateDTO> {
   const data = await res.json();
   return data.state;
 }
+
+/**
+ * Cancel or mark a patient absent from the queue (Staff credentials required)
+ */
+export async function staffCancelQueuePatient(
+  token: string,
+  reason?: string,
+  tokenOverride?: string
+): Promise<{ success: boolean; patient: PatientQueueView | null }> {
+  const authToken = tokenOverride || getActiveStaffToken() || DEFAULT_CLINICAL_TOKEN;
+  const res = await fetch(`${BASE_URL}/staff/cancel`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify({ token, reason }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || errorData.error || 'Failed to cancel queue ticket');
+  }
+  return res.json();
+}
+
+/**
+ * Update doctor / desk availability for a department (Staff credentials required)
+ */
+export async function staffSetDoctorStatus(
+  department: OPDDepartment,
+  available: boolean,
+  activeDesks?: number,
+  tokenOverride?: string
+): Promise<{ success: boolean; result: any }> {
+  const authToken = tokenOverride || getActiveStaffToken() || DEFAULT_CLINICAL_TOKEN;
+  const res = await fetch(`${BASE_URL}/staff/doctor-status`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify({ department, available, activeDesks }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || errorData.error || 'Failed to update doctor availability');
+  }
+  return res.json();
+}
+
+/**
+ * Reassign patient to another OPD department (Clinical staff credentials required)
+ */
+export async function staffReassignPatient(
+  token: string,
+  department: OPDDepartment,
+  tokenOverride?: string
+): Promise<{ success: boolean; patient: PatientQueueView | null }> {
+  const authToken = tokenOverride || getActiveStaffToken('clinical') || DEFAULT_CLINICAL_TOKEN;
+  const res = await fetch(`${BASE_URL}/staff/reassign`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify({ token, department }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || errorData.error || 'Failed to reassign patient');
+  }
+  return res.json();
+}
+
+/**
+ * Fetch allowlisted predefined FAQ questions for SmartQueue Assistant
+ */
+export async function fetchAssistantQuestions(): Promise<AssistantQuestion[]> {
+  const res = await fetch(`${BASE_URL}/assistant/questions`);
+  if (!res.ok) {
+    throw new Error('Failed to load assistant questions');
+  }
+  const data = await res.json();
+  return data.questions || [];
+}
+
+/**
+ * Ask SmartQueue Assistant a predefined question with verified telemetry
+ */
+export async function askAssistantQuestion(
+  payload: AssistantFaqRequest
+): Promise<AssistantFaqResponse> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (payload.passId) {
+    headers['x-patient-pass-id'] = payload.passId;
+  }
+
+  const res = await fetch(`${BASE_URL}/assistant/faq`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.message || data.error || 'Failed to get answer from assistant');
+  }
+  return data;
+}
+

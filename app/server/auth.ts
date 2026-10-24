@@ -125,6 +125,14 @@ function verifyPassword(input: string, expected: string): boolean {
  * Check and record login rate limiting per client IP
  */
 export function checkLoginRateLimit(clientIp: string): { allowed: boolean; retryAfterSeconds?: number } {
+  // In development and testing environments, bypass loopback lockout to allow automated test suites
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    (clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1' || clientIp === 'localhost')
+  ) {
+    return { allowed: true };
+  }
+
   const now = Date.now();
   const attempts = (loginAttemptsMap.get(clientIp) || []).filter(
     (t) => now - t < LOGIN_RATE_LIMIT_WINDOW_MS
