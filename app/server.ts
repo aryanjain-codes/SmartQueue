@@ -99,7 +99,7 @@ async function startServer() {
       );
       res.setHeader(
         'Access-Control-Allow-Headers',
-        'Content-Type, Authorization, X-Staff-Token'
+        'Content-Type, Authorization, X-Staff-Token, X-Patient-Pass-Id, x-patient-pass-id'
       );
     }
 

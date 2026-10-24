@@ -544,16 +544,11 @@ export async function fetchAssistantQuestions(): Promise<AssistantQuestion[]> {
 export async function askAssistantQuestion(
   payload: AssistantFaqRequest
 ): Promise<AssistantFaqResponse> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  if (payload.passId) {
-    headers['x-patient-pass-id'] = payload.passId;
-  }
-
   const res = await fetch(`${BASE_URL}/assistant/faq`, {
     method: 'POST',
-    headers,
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(payload),
   });
 

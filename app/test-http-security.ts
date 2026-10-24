@@ -191,8 +191,26 @@ async function runHttpSecurityTests() {
   }
   assert(hitRateLimit, 'Scanner rate limiter active: returns 429 Too Many Requests when threshold exceeded');
 
-  // Reset rate limit map after threshold test so subsequent test suites are not blocked
-  await fetch(`${BASE}/reset-demo`, { method: 'POST' }).catch(() => {});
+  // 14. CORS Preflight & Netlify Origin Handling
+  console.log('\n--- Testing Netlify Origin & CORS Preflight ---');
+  const corsPreflightRes = await fetch(`${BASE}/assistant/faq`, {
+    method: 'OPTIONS',
+    headers: {
+      Origin: 'https://smartqueue-fsp.netlify.app',
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'Content-Type, X-Patient-Pass-Id',
+    },
+  });
+  assert(corsPreflightRes.status === 204, 'CORS preflight OPTIONS /api/assistant/faq responds 204 No Content');
+  assert(
+    corsPreflightRes.headers.get('access-control-allow-origin') === 'https://smartqueue-fsp.netlify.app',
+    'CORS preflight allows deployed Netlify origin (https://smartqueue-fsp.netlify.app)'
+  );
+  const allowedHeaders = corsPreflightRes.headers.get('access-control-allow-headers') || '';
+  assert(
+    allowedHeaders.includes('Content-Type') && allowedHeaders.toLowerCase().includes('x-patient-pass-id'),
+    'CORS preflight allows Content-Type and X-Patient-Pass-Id headers'
+  );
 
   console.log('\n===========================================================');
   console.log(`HTTP TESTS EXECUTED: ${passed + failed}`);
