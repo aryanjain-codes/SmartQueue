@@ -3,7 +3,7 @@
     "id": "SJH-2025-9988",
     "token": "MED-088",
     "passId": "SQ-PASS-EXPIRED-TEST-FIXTURE-B",
-    "passExpiry": "2026-10-19T09:50:21.076Z",
+    "passExpiry": "2026-10-19T10:12:05.043Z",
     "passStatus": "expired",
     "fullName": "Walter White",
     "age": 52,
@@ -20,13 +20,13 @@
     "status": "COMPLETED",
     "triageSeverity": "Routine",
     "location": "Discharged / Lapsed Pass",
-    "registeredAt": "2026-09-19T09:50:21.076Z"
+    "registeredAt": "2026-09-19T10:12:05.043Z"
   },
   {
     "id": "SJH-2025-9999",
     "token": "MED-089",
     "passId": "SQ-PASS-REVOKED-TEST-FIXTURE-B",
-    "passExpiry": "2026-11-23T09:50:21.076Z",
+    "passExpiry": "2026-11-23T10:12:05.043Z",
     "passStatus": "revoked",
     "fullName": "Jesse Pinkman",
     "age": 26,
@@ -43,13 +43,13 @@
     "status": "COMPLETED",
     "triageSeverity": "Urgent Priority",
     "location": "External Screening Tent 03",
-    "registeredAt": "2026-10-22T09:50:21.076Z"
+    "registeredAt": "2026-10-22T10:12:05.043Z"
   },
   {
     "id": "SJH-2025-8821",
     "token": "MED-039",
     "passId": "SQ-PASS-88210A1B2C3D4E5F6789-B",
-    "passExpiry": "2026-11-23T09:50:21.076Z",
+    "passExpiry": "2026-11-23T10:12:05.043Z",
     "passStatus": "active",
     "fullName": "Arthur Pendelton",
     "age": 58,
@@ -66,14 +66,14 @@
     "status": "SERVING",
     "triageSeverity": "Routine",
     "location": "Consultation Room 104",
-    "registeredAt": "2026-10-24T09:05:21.076Z",
-    "calledAt": "2026-10-24T09:42:21.076Z"
+    "registeredAt": "2026-10-24T09:27:05.043Z",
+    "calledAt": "2026-10-24T10:04:05.043Z"
   },
   {
     "id": "SJH-2025-7711",
     "token": "CARD-012",
     "passId": "SQ-PASS-77110B8C9D0E1F2A3B4C-B",
-    "passExpiry": "2026-11-23T09:50:21.076Z",
+    "passExpiry": "2026-11-23T10:12:05.043Z",
     "passStatus": "active",
     "fullName": "Marcus Brody",
     "age": 61,
@@ -90,14 +90,14 @@
     "status": "SERVING",
     "triageSeverity": "Routine",
     "location": "Consultation Room 102",
-    "registeredAt": "2026-10-24T09:15:21.076Z",
-    "calledAt": "2026-10-24T09:38:21.076Z"
+    "registeredAt": "2026-10-24T09:37:05.043Z",
+    "calledAt": "2026-10-24T10:00:05.043Z"
   },
   {
     "id": "SJH-2025-6610",
     "token": "ORTH-024",
     "passId": "SQ-PASS-66100E1F2A3B4C5D6E7F-B",
-    "passExpiry": "2026-11-23T09:50:21.076Z",
+    "passExpiry": "2026-11-23T10:12:05.043Z",
     "passStatus": "active",
     "fullName": "Thomas Wayne",
     "age": 45,
@@ -114,14 +114,14 @@
     "status": "SERVING",
     "triageSeverity": "Routine",
     "location": "Consultation Room 105",
-    "registeredAt": "2026-10-24T09:20:21.076Z",
-    "calledAt": "2026-10-24T09:44:21.076Z"
+    "registeredAt": "2026-10-24T09:42:05.043Z",
+    "calledAt": "2026-10-24T10:06:05.043Z"
   },
   {
     "id": "SJH-2025-8832",
     "token": "MED-040",
     "passId": "SQ-PASS-88320C3D4E5F6A7B8C9D-B",
-    "passExpiry": "2026-11-23T09:50:21.076Z",
+    "passExpiry": "2026-11-23T10:12:05.043Z",
     "passStatus": "active",
     "fullName": "David Ross",
     "age": 42,
@@ -138,13 +138,13 @@
     "status": "WAITING",
     "triageSeverity": "Urgent Priority",
     "location": "Waiting Hall B",
-    "registeredAt": "2026-10-24T09:21:21.076Z"
+    "registeredAt": "2026-10-24T09:43:05.043Z"
   },
   {
     "id": "SJH-2025-8837",
     "token": "MED-041",
     "passId": "SQ-PASS-88370D4E5F6A7B8C9D0E-B",
-    "passExpiry": "2026-11-23T09:50:21.076Z",
+    "passExpiry": "2026-11-23T10:12:05.043Z",
     "passStatus": "active",
     "fullName": "Fatima Al-Mansoor",
     "age": 29,
@@ -161,13 +161,13 @@
     "status": "WAITING",
     "triageSeverity": "Routine",
     "location": "At Vitals Check",
-    "registeredAt": "2026-10-24T09:28:21.076Z"
+    "registeredAt": "2026-10-24T09:50:05.043Z"
   },
   {
     "id": "SJH-2025-7719",
     "token": "CARD-013",
     "passId": "SQ-PASS-77190C9D0E1F2A3B4C5D-B",
-    "passExpiry": "2026-11-23T09:50:21.076Z",
+    "passExpiry": "2026-11-23T10:12:05.043Z",
     "passStatus": "active",
     "fullName": "Elena Gomez",
     "age": 48,
@@ -184,13 +184,13 @@
     "status": "WAITING",
     "triageSeverity": "Urgent Priority",
     "location": "Waiting Hall A",
-    "registeredAt": "2026-10-24T09:32:21.076Z"
+    "registeredAt": "2026-10-24T09:54:05.043Z"
   },
   {
     "id": "SJH-2025-6618",
     "token": "ORTH-025",
     "passId": "SQ-PASS-66180F2A3B4C5D6E7F8A-B",
-    "passExpiry": "2026-11-23T09:50:21.076Z",
+    "passExpiry": "2026-11-23T10:12:05.043Z",
     "passStatus": "active",
     "fullName": "Samantha Reed",
     "age": 32,
@@ -207,13 +207,13 @@
     "status": "WAITING",
     "triageSeverity": "Routine",
     "location": "Waiting Hall C",
-    "registeredAt": "2026-10-24T09:35:21.076Z"
+    "registeredAt": "2026-10-24T09:57:05.043Z"
   },
   {
     "id": "SJH-2025-8841",
     "token": "MED-042",
     "passId": "SQ-PASS-90412E5F6A7B8C9D0E1F-B",
-    "passExpiry": "2026-11-23T09:50:21.076Z",
+    "passExpiry": "2026-11-23T10:12:05.043Z",
     "passStatus": "active",
     "fullName": "Eleanor Vance",
     "age": 34,
@@ -231,13 +231,13 @@
     "status": "WAITING",
     "triageSeverity": "Routine",
     "location": "Waiting Hall B",
-    "registeredAt": "2026-10-24T09:36:21.076Z"
+    "registeredAt": "2026-10-24T09:58:05.043Z"
   },
   {
     "id": "SJH-2025-7724",
     "token": "CARD-014",
     "passId": "SQ-PASS-77240D0E1F2A3B4C5D6E-B",
-    "passExpiry": "2026-11-23T09:50:21.076Z",
+    "passExpiry": "2026-11-23T10:12:05.043Z",
     "passStatus": "active",
     "fullName": "Harold Finch",
     "age": 55,
@@ -254,13 +254,13 @@
     "status": "WAITING",
     "triageSeverity": "Routine",
     "location": "Waiting Hall A",
-    "registeredAt": "2026-10-24T09:40:21.076Z"
+    "registeredAt": "2026-10-24T10:02:05.043Z"
   },
   {
     "id": "SJH-2025-6622",
     "token": "ORTH-026",
     "passId": "SQ-PASS-66220A3B4C5D6E7F8A9B-B",
-    "passExpiry": "2026-11-23T09:50:21.076Z",
+    "passExpiry": "2026-11-23T10:12:05.043Z",
     "passStatus": "active",
     "fullName": "James Miller",
     "age": 71,
@@ -277,13 +277,13 @@
     "status": "WAITING",
     "triageSeverity": "Senior Priority",
     "location": "Waiting Hall C",
-    "registeredAt": "2026-10-24T09:42:21.076Z"
+    "registeredAt": "2026-10-24T10:04:05.043Z"
   },
   {
     "id": "SJH-2025-8846",
     "token": "MED-043",
     "passId": "SQ-PASS-90460F6A7B8C9D0E1F2A-B",
-    "passExpiry": "2026-11-23T09:50:21.076Z",
+    "passExpiry": "2026-11-23T10:12:05.043Z",
     "passStatus": "active",
     "fullName": "Robert Chen",
     "age": 67,
@@ -300,13 +300,13 @@
     "status": "WAITING",
     "triageSeverity": "Senior Priority",
     "location": "Waiting Hall B",
-    "registeredAt": "2026-10-24T09:44:21.076Z"
+    "registeredAt": "2026-10-24T10:06:05.043Z"
   },
   {
     "id": "SJH-2025-8850",
     "token": "MED-044",
     "passId": "SQ-PASS-90500A7B8C9D0E1F2A3B-B",
-    "passExpiry": "2026-11-23T09:50:21.076Z",
+    "passExpiry": "2026-11-23T10:12:05.043Z",
     "passStatus": "active",
     "fullName": "Clara Oswald",
     "age": 8,
@@ -323,6 +323,6 @@
     "status": "WAITING",
     "triageSeverity": "Pediatric Fast-Track",
     "location": "Triage Intake",
-    "registeredAt": "2026-10-24T09:48:21.076Z"
+    "registeredAt": "2026-10-24T10:10:05.043Z"
   }
 ]

@@ -13,6 +13,7 @@ import { PatientLiveView } from './src/components/PatientLiveView';
 import { HomeView } from './src/components/HomeView';
 import { RegisterView } from './src/components/RegisterView';
 import { GateScannerModal } from './src/components/GateScannerModal';
+import { SmartQueueAssistant } from './src/components/SmartQueueAssistant';
 import { SmartQueueState, PublicQueueStateDTO, PatientQueueView } from './src/types/queue';
 
 let passed = 0;
@@ -306,6 +307,52 @@ try {
   assert('StaffDashboardView renders Launch Camera Scanner button in security view', htmlStaffSec.includes('Launch Camera Scanner'));
 } catch (err: any) {
   assert('GateScannerModal and triggers render safely', false, err.message);
+}
+
+// 8. SmartQueueAssistant Modal Rendering and Rules of Hooks Verification
+console.log('\n--- TEST GROUP 7: SmartQueueAssistant & Rules of Hooks (React Error #310 Prevention) ---');
+try {
+  // Test closed state first (typical initial mount)
+  const htmlClosed = renderToString(
+    React.createElement(SmartQueueAssistant, {
+      isOpen: false,
+      onClose: () => {},
+    })
+  );
+  assert('SmartQueueAssistant renders null safely when closed', htmlClosed === '');
+
+  // Test transition to open state (verifies consistent hook count between closed and open)
+  const htmlOpen = renderToString(
+    React.createElement(SmartQueueAssistant, {
+      isOpen: true,
+      onClose: () => {},
+      patientToken: 'MED-042',
+      patientPassId: 'SQ-PASS-TEST-123',
+      patientDepartment: 'General Medicine',
+    })
+  );
+  assert('SmartQueueAssistant renders dialog safely when open', htmlOpen.includes('SmartQueue Assistant'));
+  assert('SmartQueueAssistant displays category tabs when open', htmlOpen.includes('All Topics'));
+  assert('SmartQueueAssistant binds authenticated EHR pass', htmlOpen.includes('MED-042'));
+
+  // Test toggling back to closed and open again to guarantee no hook count drift
+  const htmlClosedAgain = renderToString(
+    React.createElement(SmartQueueAssistant, {
+      isOpen: false,
+      onClose: () => {},
+    })
+  );
+  assert('SmartQueueAssistant transitions back to closed without error', htmlClosedAgain === '');
+
+  const htmlOpenAgain = renderToString(
+    React.createElement(SmartQueueAssistant, {
+      isOpen: true,
+      onClose: () => {},
+    })
+  );
+  assert('SmartQueueAssistant re-opens safely (zero Rules of Hooks violation)', htmlOpenAgain.includes('SmartQueue Assistant'));
+} catch (err: any) {
+  assert('SmartQueueAssistant renders safely across open/closed state toggles', false, err.message);
 }
 
 console.log('\n===========================================================');

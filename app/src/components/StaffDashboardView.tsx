@@ -74,6 +74,29 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
       .catch((err) => console.warn('Could not fetch initial scan logs:', err));
   }, [staffSession?.token]);
 
+  // Derive active consultation fields safely for the timer hook
+  const activeServing = queueState?.departments?.[selectedDept]?.nowServingPatient
+    || queueState?.departments?.['General Medicine']?.nowServingPatient
+    || null;
+  const activeServingToken = activeServing?.token;
+  const activeServingCalledAt = activeServing?.calledAt;
+
+  // Live timer for active consultation - called unconditionally at top of component
+  useEffect(() => {
+    if (activeServingCalledAt) {
+      const startMs = new Date(activeServingCalledAt).getTime();
+      const initialSeconds = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+      setConsultationTimer(initialSeconds);
+
+      const interval = setInterval(() => {
+        setConsultationTimer((prev) => prev + 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setConsultationTimer(0);
+    }
+  }, [activeServingToken, activeServingCalledAt]);
+
   const handleRoleToggle = (newRole: 'clinical' | 'security') => {
     if (staffSession && staffSession.user.role !== newRole) {
       setActionFeedback(
@@ -185,22 +208,6 @@ export const StaffDashboardView: React.FC<StaffDashboardViewProps> = ({
     const mrnMatch = p.mrn ? p.mrn.toLowerCase().includes(q) : false;
     return tokenMatch || nameMatch || idMatch || mrnMatch;
   });
-
-  // Live timer for active consultation
-  useEffect(() => {
-    if (currentServing && currentServing.calledAt) {
-      const startMs = new Date(currentServing.calledAt).getTime();
-      const initialSeconds = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
-      setConsultationTimer(initialSeconds);
-
-      const interval = setInterval(() => {
-        setConsultationTimer((prev) => prev + 1);
-      }, 1000);
-      return () => clearInterval(interval);
-    } else {
-      setConsultationTimer(0);
-    }
-  }, [currentServing?.token, currentServing?.calledAt]);
 
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

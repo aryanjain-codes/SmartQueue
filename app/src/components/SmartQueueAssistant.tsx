@@ -10,6 +10,14 @@ interface SmartQueueAssistantProps {
   patientDepartment?: string;
 }
 
+const CATEGORIES: Array<{ id: 'all' | 'queue' | 'priority' | 'status' | 'general'; label: string; icon: string }> = [
+  { id: 'all', label: 'All Topics', icon: 'apps' },
+  { id: 'queue', label: 'Wait & Delay', icon: 'schedule' },
+  { id: 'priority', label: 'Triage Priority', icon: 'emergency' },
+  { id: 'status', label: 'Token Status', icon: 'badge' },
+  { id: 'general', label: 'Hospital Guide', icon: 'local_hospital' },
+];
+
 export const SmartQueueAssistant: React.FC<SmartQueueAssistantProps> = ({
   isOpen,
   onClose,
@@ -27,6 +35,7 @@ export const SmartQueueAssistant: React.FC<SmartQueueAssistantProps> = ({
       response: AssistantFaqResponse;
     }>
   >([]);
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'queue' | 'priority' | 'status' | 'general'>('all');
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -65,7 +74,17 @@ export const SmartQueueAssistant: React.FC<SmartQueueAssistantProps> = ({
     }
   }, [conversation, loading]);
 
-  if (!isOpen) return null;
+  const categoryCounts = React.useMemo(() => {
+    const counts: Record<string, number> = { all: questions.length };
+    for (const q of questions) {
+      counts[q.category] = (counts[q.category] || 0) + 1;
+    }
+    return counts;
+  }, [questions]);
+
+  const filteredQuestions = selectedCategory === 'all'
+    ? questions
+    : questions.filter((q) => q.category === selectedCategory);
 
   const handleSelectQuestion = async (q: AssistantQuestion) => {
     setSelectedQuestion(q);
@@ -94,27 +113,8 @@ export const SmartQueueAssistant: React.FC<SmartQueueAssistantProps> = ({
     setError(null);
   };
 
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'queue' | 'priority' | 'status' | 'general'>('all');
-
-  const CATEGORIES: Array<{ id: 'all' | 'queue' | 'priority' | 'status' | 'general'; label: string; icon: string }> = [
-    { id: 'all', label: 'All Topics', icon: 'apps' },
-    { id: 'queue', label: 'Wait & Delay', icon: 'schedule' },
-    { id: 'priority', label: 'Triage Priority', icon: 'emergency' },
-    { id: 'status', label: 'Token Status', icon: 'badge' },
-    { id: 'general', label: 'Hospital Guide', icon: 'local_hospital' },
-  ];
-
-  const categoryCounts = React.useMemo(() => {
-    const counts: Record<string, number> = { all: questions.length };
-    for (const q of questions) {
-      counts[q.category] = (counts[q.category] || 0) + 1;
-    }
-    return counts;
-  }, [questions]);
-
-  const filteredQuestions = selectedCategory === 'all'
-    ? questions
-    : questions.filter((q) => q.category === selectedCategory);
+  // Safe early return ONLY after all hooks (useState, useRef, useEffect, useMemo) have executed
+  if (!isOpen) return null;
 
   // Predefined Selectable Questions Section (Strictly No Free-Text Input)
   return (
